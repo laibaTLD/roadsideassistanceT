@@ -51,9 +51,9 @@ export const ChatbotWidget: React.FC = () => {
   // Use only settings from database - no fallbacks
   const { primaryColor, secondaryColor, position, botName, iconUrl, placeholderText } = settings;
 
-  // Transform iconUrl to use /api/uploads/ instead of /uploads/
+  // Transform iconUrl to use full API base URL for uploads
   const transformedIconUrl = iconUrl?.startsWith('/uploads/')
-    ? iconUrl.replace('/uploads/', '/api/uploads/')
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${iconUrl}`
     : iconUrl;
 
   // Position classes
