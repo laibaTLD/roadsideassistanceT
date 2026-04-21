@@ -51,6 +51,11 @@ export const ChatbotWidget: React.FC = () => {
   // Use only settings from database - no fallbacks
   const { primaryColor, secondaryColor, position, botName, iconUrl, placeholderText } = settings;
 
+  // Transform iconUrl to use /api/uploads/ instead of /uploads/
+  const transformedIconUrl = iconUrl?.startsWith('/uploads/')
+    ? iconUrl.replace('/uploads/', '/api/uploads/')
+    : iconUrl;
+
   // Position classes
   const positionClasses = {
     'bottom-right': 'bottom-10 right-20',
@@ -84,9 +89,9 @@ export const ChatbotWidget: React.FC = () => {
             }}
           >
             <div className="flex items-center gap-2">
-              {iconUrl ? (
+              {transformedIconUrl ? (
                 <img
-                  src={iconUrl}
+                  src={transformedIconUrl}
                   alt={botName}
                   className="w-8 h-8 rounded-full object-cover"
                 />
@@ -275,9 +280,9 @@ export const ChatbotWidget: React.FC = () => {
       >
        {isOpen ? (
   <X className="w-6 h-6 text-white" />
-) : iconUrl ? (
+) : transformedIconUrl ? (
   <img
-    src={iconUrl}
+    src={transformedIconUrl}
     alt={botName}
     className="w-8 h-8 rounded-full object-cover"
   />
