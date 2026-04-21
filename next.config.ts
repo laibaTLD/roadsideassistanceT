@@ -18,14 +18,21 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!API_BASE_URL) {
+      throw new Error('NEXT_PUBLIC_API_BASE_URL environment variable is required in next.config.ts');
+    }
+    
+    const baseUrl = API_BASE_URL.replace(/\/api$/, ''); // Remove /api suffix if present
+    
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:5000/api/:path*',
+        destination: `${baseUrl}/api/:path*`,
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:5000/uploads/:path*',
+        destination: `${baseUrl}/uploads/:path*`,
       },
     ];
   },

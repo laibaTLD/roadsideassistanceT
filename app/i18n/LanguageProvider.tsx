@@ -125,11 +125,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         detected = FALLBACK_LANGUAGE;
       }
 
-      // If browser language isn't supported, optionally try Geo-IP
-      if (!isSupported(detected)) {
-        const geo = await detectLanguageWithGeoIp();
-        detected = geo || FALLBACK_LANGUAGE;
-      }
+      // GeoIP detection disabled to prevent polling requests
+      // if (!isSupported(detected)) {
+      //   const geo = await detectLanguageWithGeoIp();
+      //   detected = geo || FALLBACK_LANGUAGE;
+      // }
 
       if (cancelled) return;
       setLanguage(detected);

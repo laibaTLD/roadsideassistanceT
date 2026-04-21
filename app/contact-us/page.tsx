@@ -1,12 +1,34 @@
-'use client';
-
 import { ContactSection } from '@/app/components/sections/ContactSection';
 import { Header } from '@/app/components/layout/Header';
 import { Footer } from '@/app/components/layout/Footer';
-import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
+import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
 
-export default function ContactPage() {
-  const { site } = useWebBuilder();
+// Enable ISR - revalidate every hour (3600 seconds)
+export const revalidate = 3600;
+
+async function getSiteData() {
+  try {
+    const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    
+    const siteResponse = await fetch(`${apiUrl}/api/public/sites/${siteSlug}`, {
+      next: { revalidate: 3600 }
+    });
+    
+    if (!siteResponse.ok) return null;
+    
+    const siteData = await siteResponse.json();
+    if (!siteData.success || !siteData.data) return null;
+    
+    return siteData.data;
+  } catch (error) {
+    console.error('Error fetching site data:', error);
+    return null;
+  }
+}
+
+export default async function ContactPage() {
+  const site = await getSiteData();
 
   // Use site contactSection if available, otherwise create default contact section config
   const contactSection = site?.contactSection ? {

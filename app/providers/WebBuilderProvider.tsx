@@ -5,7 +5,10 @@ import { Site, Page, Service, BlogPost, Project } from '@/app/lib/types';
 import { siteApi, pageApi, serviceApi, blogApi, projectApi, testimonialApi, serviceAreaApi } from '@/app/lib/api';
 
 // Site slug from environment variable
-const SITE_SLUG = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG || 'brightpath-home-services-mm9bo6ed-2n7p';
+const SITE_SLUG = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
+if (!SITE_SLUG) {
+  throw new Error('NEXT_PUBLIC_WEBBUILDER_SITE_SLUG environment variable is required');
+}
 
 
 
@@ -38,19 +41,29 @@ export const useWebBuilder = () => {
 
 interface WebBuilderProviderProps {
   children: ReactNode;
+  initialData?: {
+    site?: Site | null;
+    pages?: Page[];
+    services?: Service[];
+    blogPosts?: BlogPost[];
+    projects?: Project[];
+    testimonials?: { title?: string; description?: string; testimonials: any[] } | null;
+    serviceAreaPages?: any[];
+  };
 }
 
-export const WebBuilderProvider: React.FC<WebBuilderProviderProps> = ({ children }) => {
-  const [site, setSite] = useState<Site | null>(null);
-  const [pages, setPages] = useState<Page[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [testimonials, setTestimonials] = useState<{ title?: string; description?: string; testimonials: any[] } | null>(null);
-  const [serviceAreaPages, setServiceAreaPages] = useState<any[]>([]);
+export const WebBuilderProvider: React.FC<WebBuilderProviderProps> = ({ children, initialData }) => {
+  const [site, setSite] = useState<Site | null>(initialData?.site || null);
+  const [pages, setPages] = useState<Page[]>(initialData?.pages || []);
+  const [services, setServices] = useState<Service[]>(initialData?.services || []);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(initialData?.blogPosts || []);
+  const [projects, setProjects] = useState<Project[]>(initialData?.projects || []);
+  const [testimonials, setTestimonials] = useState<{ title?: string; description?: string; testimonials: any[] } | null>(initialData?.testimonials || null);
+  const [serviceAreaPages, setServiceAreaPages] = useState<any[]>(initialData?.serviceAreaPages || []);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasInitialData, setHasInitialData] = useState(!!initialData?.site);
 
   const loadSite = async (slug: string) => {
     try {
@@ -127,9 +140,7 @@ export const WebBuilderProvider: React.FC<WebBuilderProviderProps> = ({ children
 
   const loadTestimonials = async (siteSlug: string) => {
     try {
-      console.log('[WebBuilderProvider] Loading testimonials for site:', siteSlug);
       const testimonialsData = await testimonialApi.getTestimonialsBySite(siteSlug);
-      console.log('[WebBuilderProvider] Testimonials loaded:', testimonialsData);
       setTestimonials(testimonialsData);
     } catch (err) {
       console.warn('Failed to load testimonials:', err instanceof Error ? err.message : 'Unknown error');
@@ -145,100 +156,16 @@ export const WebBuilderProvider: React.FC<WebBuilderProviderProps> = ({ children
     }
   };
 
-  // Auto-load site from env variable on mount
+  // Auto-load site from env variable on mount (only if no initial data)
   useEffect(() => {
+    if (hasInitialData) return; // Skip if data was provided via ISR
+    
     if (!SITE_SLUG) {
       setError('NEXT_PUBLIC_WEBBUILDER_SITE_SLUG environment variable is not defined. Please check your .env file.');
       return;
     }
     loadSite(SITE_SLUG);
-  }, []);
-
-  // Poll for site updates every 3 seconds to detect theme/color changes from builder
-  useEffect(() => {
-    if (!site?.slug) return;
-
-    const intervalId = setInterval(async () => {
-      try {
-        const siteData = await siteApi.getSiteBySlug(site.slug);
-        setSite(prevSite => {
-          // Only update if theme has changed
-          if (prevSite && JSON.stringify(prevSite.theme) !== JSON.stringify(siteData.theme)) {
-            return siteData;
-          }
-          return prevSite;
-        });
-      } catch (err) {
-        // Silently ignore polling errors to not disrupt user experience
-      }
-    }, 3000);
-
-    return () => clearInterval(intervalId);
-  }, [site?.slug]);
-
-  // Poll for projects updates every 5 seconds to detect new/updated published projects
-  useEffect(() => {
-    if (!site?.slug) return;
-
-    const intervalId = setInterval(async () => {
-      try {
-        const projectsData = await projectApi.getProjectsBySite(site.slug);
-        setProjects(prevProjects => {
-          if (JSON.stringify(prevProjects) !== JSON.stringify(projectsData)) {
-            return projectsData;
-          }
-          return prevProjects;
-        });
-      } catch (err) {
-        // Silently ignore polling errors
-      }
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [site?.slug]);
-
-  // Poll for pages updates every 5 seconds so navigation updates after creating/publishing pages
-  useEffect(() => {
-    if (!site?.slug) return;
-
-    const intervalId = setInterval(async () => {
-      try {
-        const pagesData = await pageApi.getPagesBySite(site.slug);
-        setPages(prevPages => {
-          if (JSON.stringify(prevPages) !== JSON.stringify(pagesData)) {
-            return pagesData;
-          }
-          return prevPages;
-        });
-      } catch (err) {
-        // Silently ignore polling errors
-      }
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [site?.slug]);
-
-  // Poll for services updates every 5 seconds to detect slug and content changes
-  useEffect(() => {
-    if (!site?.slug) return;
-
-    const intervalId = setInterval(async () => {
-      try {
-        const servicesData = await serviceApi.getServicesBySite(site.slug);
-        setServices(prevServices => {
-          // Only update if services data has changed
-          if (JSON.stringify(prevServices) !== JSON.stringify(servicesData)) {
-            return servicesData;
-          }
-          return prevServices;
-        });
-      } catch (err) {
-        // Silently ignore polling errors
-      }
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [site?.slug]);
+  }, [hasInitialData]);
 
   const contextValue: WebBuilderContextType = {
     site,

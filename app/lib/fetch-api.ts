@@ -79,13 +79,11 @@ const createFetchApi = (baseURL: string, defaultTimeout = 30000) => {
       const text = await response.text();
       
       if (!text || text.trim() === '') {
-        console.log(`[fetch-api] Empty response for ${url}`);
         return {} as T;
       }
       
       if (contentType && contentType.includes('application/json')) {
         const json = JSON.parse(text);
-        console.log(`[fetch-api] JSON response for ${url}:`, json);
         return json;
       }
       
@@ -144,8 +142,11 @@ const createFetchApi = (baseURL: string, defaultTimeout = 30000) => {
 };
 
 // Create API instance
-const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
-  (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+if (!rawBaseUrl) {
+  throw new Error('NEXT_PUBLIC_API_BASE_URL environment variable is required');
+}
 
 const isLocalRaw = /^http:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?\b/i.test(rawBaseUrl);
 const API_BASE_URL = rawBaseUrl.startsWith('http://') && !isLocalRaw

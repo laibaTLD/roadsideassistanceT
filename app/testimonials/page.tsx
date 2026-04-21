@@ -1,100 +1,51 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import { TestimonialsSection } from '@/app/components/sections/TestimonialsSection';
 import { Header } from '@/app/components/layout/Header';
 import { Footer } from '@/app/components/layout/Footer';
-import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 
-interface Testimonial {
-  _id: string;
-  name: string;
-  role?: string;
-  company?: string;
-  content: any;
-  rating?: number;
-  avatar?: string;
-  featured?: boolean;
-  enabled?: boolean;
+// Enable ISR - revalidate every hour (3600 seconds)
+export const revalidate = 3600;
+
+async function getTestimonialsData() {
+  try {
+    const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    
+    const siteResponse = await fetch(`${apiUrl}/api/public/sites/${siteSlug}`, {
+      next: { revalidate: 3600 }
+    });
+    
+    if (!siteResponse.ok) return null;
+    
+    const siteData = await siteResponse.json();
+    if (!siteData.success || !siteData.data) return null;
+    
+    const site = siteData.data;
+    
+    // Testimonials are typically stored in the site data or fetched separately
+    // For now, we'll return the site data which may contain testimonials
+    return { site };
+  } catch (error) {
+    console.error('Error fetching testimonials:', error);
+    return null;
+  }
 }
 
-interface TestimonialsData {
-  testimonials: Testimonial[];
-  title: string;
-  description: string;
-}
-
-export default function TestimonialsPage() {
-  const { site } = useWebBuilder();
-  const [testimonialsData, setTestimonialsData] = useState<TestimonialsData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTestimonials = async () => {
-      try {
-        if (!site?._id) {
-          setLoading(false);
-          return;
-        }
-
-        // Get auth token from localStorage
-        const token = localStorage.getItem('accessToken') || 
-                      localStorage.getItem('token') || 
-                      localStorage.getItem('auth_token');
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const response = await fetch(`/api/testimonials?siteId=${site._id}`, {
-          headers,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch testimonials');
-        }
-
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          // Map testimonials to match the expected structure (text instead of content)
-          const mappedTestimonials = (data.data.testimonials || []).map((t: any) => ({
-            ...t,
-            text: t.content || t.text || '', // Use content if available, fallback to text
-          }));
-          
-          setTestimonialsData({
-            testimonials: mappedTestimonials,
-            title: data.data.title || 'Client Testimonials',
-            description: data.data.description || 'Hear what our clients have to say about our services',
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching testimonials:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTestimonials();
-  }, [site?._id]);
+export default async function TestimonialsPage() {
+  const data = await getTestimonialsData();
+  const site = data?.site;
 
   // Default testimonials section configuration
   const defaultTestimonialsSection = {
     enabled: true,
     title: { 
       type: 'doc', 
-      content: [{ type: 'paragraph', content: [{ type: 'text', text: testimonialsData?.title || 'Client Testimonials' }] }] 
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Client Testimonials' }] }] 
     },
     description: { 
       type: 'doc', 
-      content: [{ type: 'paragraph', content: [{ type: 'text', text: testimonialsData?.description || 'Hear what our clients have to say about our services' }] }] 
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hear what our clients have to say about our services' }] }] 
     },
-    testimonials: testimonialsData?.testimonials || [],
+    testimonials: site?.testimonials || [],
   };
 
   // Use fetched data or defaults
@@ -107,13 +58,7 @@ export default function TestimonialsPage() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {loading ? (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
-          </div>
-        ) : (
-          <TestimonialsSection testimonialsSection={testimonialsSection} />
-        )}
+        <TestimonialsSection testimonialsSection={testimonialsSection} />
       </main>
 
       {/* Footer */}

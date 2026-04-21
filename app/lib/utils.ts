@@ -28,8 +28,10 @@ export function getImageSrc(path: string | undefined | null | any): string {
   if (pathStr.startsWith('data:')) return pathStr
 
   // Media Library path - resolve to backend URL
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') ||
-    (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000')
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!baseUrl) {
+    throw new Error('NEXT_PUBLIC_API_BASE_URL environment variable is required');
+  }
   const isLocalBase = /^http:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?\b/i.test(baseUrl)
   const httpsBaseUrl = isLocalBase ? baseUrl : baseUrl.replace(/^http:\/\//i, 'https://')
 

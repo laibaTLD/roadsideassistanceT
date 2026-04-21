@@ -82,11 +82,8 @@ export const projectApi = {
 export const testimonialApi = {
   getTestimonialsBySite: async (siteSlug: string): Promise<{ title?: string; description?: string; testimonials: any[] }> => {
     const response = await api.get(`/testimonials?siteSlug=${siteSlug}`);
-    console.log('[testimonialApi] Raw response:', response);
-    console.log('[testimonialApi] response.data:', response.data);
     // Handle both { data: { testimonials: [] } } and { testimonials: [] } structures
     const data = response.data?.data ?? response.data ?? { testimonials: [] };
-    console.log('[testimonialApi] Extracted data:', data);
     return data;
   },
 };
@@ -121,8 +118,10 @@ export const mediaApi = {
     
     if (!cleanPath) return '';
     
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 
-      (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000');
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!baseUrl) {
+      throw new Error('NEXT_PUBLIC_API_BASE_URL environment variable is required');
+    }
     const isLocalBase = /^http:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?\b/i.test(baseUrl);
     const httpsBaseUrl = isLocalBase ? baseUrl : baseUrl.replace(/^http:\/\//i, 'https://');
     return `${httpsBaseUrl}/uploads/${cleanPath}`;

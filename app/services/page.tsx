@@ -1,6 +1,3 @@
-'use client';
-
-import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { Page } from '@/app/lib/types';
 import { Header } from '@/app/components/layout/Header';
 import { Footer } from '@/app/components/layout/Footer';
@@ -11,9 +8,47 @@ import { CTASection } from '@/app/components/sections/CTASection';
 import { TestimonialsSection } from '@/app/components/sections/TestimonialsSection';
 import { FAQSection } from '@/app/components/sections/FAQSection';
 import { ServingAreasSection } from '@/app/components/sections/ServingAreasSection';
+import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
 
-export default function ServicesPage() {
-  const { site, pages, loading, error } = useWebBuilder();
+// Enable ISR - revalidate every hour (3600 seconds)
+export const revalidate = 3600;
+
+async function getSiteData() {
+  try {
+    const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
+    
+    const siteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/public/sites/${siteSlug}`, {
+      next: { revalidate: 3600 }
+    });
+    
+    if (!siteResponse.ok) return null;
+    
+    const siteData = await siteResponse.json();
+    if (!siteData.success || !siteData.data) return null;
+    
+    const site = siteData.data;
+    
+    // Fetch pages
+    const pagesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/public/sites/${site.slug}/pages`, {
+      next: { revalidate: 3600 }
+    });
+    
+    if (!pagesResponse.ok) return { site, pages: [] };
+    
+    const pagesData = await pagesResponse.json();
+    if (!pagesData.success || !pagesData.data) return { site, pages: [] };
+    
+    return { site, pages: pagesData.data };
+  } catch (error) {
+    console.error('Error fetching site data:', error);
+    return null;
+  }
+}
+
+export default async function ServicesPage() {
+  const data = await getSiteData();
+  const site = data?.site;
+  const pages = data?.pages || [];
 
   // Get theme colors from site
   const themeColors = {
@@ -36,53 +71,36 @@ export default function ServicesPage() {
     body: site?.theme?.bodyFont,
   };
 
-  if (loading && !site) {
-    return (
-      <div 
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: themeColors.pageBackground }}
-      >
-        <div 
-          className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
-          style={{ 
-            borderTopColor: themeColors.primaryButton,
-            borderBottomColor: themeColors.primaryButton
-          }}
-        ></div>
-      </div>
-    );
-  }
-
-  if (error && !site) {
+  if (!site) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: themeColors.pageBackground }}
+        style={{ backgroundColor: '#FFFFFF' }}
       >
         <div 
           className="p-6 rounded-lg max-w-lg text-center"
           style={{ 
             backgroundColor: '#FEE2E2',
-            borderColor: themeColors.secondary,
+            borderColor: '#EF4444',
             borderWidth: '1px'
           }}
         >
           <h2 
             className="text-xl font-bold mb-2"
             style={{ 
-              color: themeColors.secondary,
+              color: '#EF4444',
               fontFamily: themeFonts.heading
             }}
           >
-            Error
+            Loading
           </h2>
           <p 
             style={{ 
-              color: themeColors.secondary,
+              color: '#EF4444',
               fontFamily: themeFonts.body
             }}
           >
-            {error}
+            Site data is being loaded...
           </p>
         </div>
       </div>

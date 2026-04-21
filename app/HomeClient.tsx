@@ -23,9 +23,6 @@ import { GallerySection } from '@/app/components/sections/GallerySection';
 export default function HomeClient() {
   const { site, pages, testimonials, loading, error } = useWebBuilder();
 
-  // Debug testimonials data
-  console.log('HomeClient testimonials:', testimonials);
-
   // Get theme colors from site using the new dynamic CSS variable system
   const themeColors = {
     primary: 'var(--wb-primary)',

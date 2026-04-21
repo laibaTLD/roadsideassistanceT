@@ -1,12 +1,9 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import { AboutSection } from '@/app/components/sections/AboutSection';
 import { ServiceHighlightsSection } from '@/app/components/sections/ServiceHighlightsSection';
 import { CTASection } from '@/app/components/sections/CTASection';
 import { Header } from '@/app/components/layout/Header';
 import { Footer } from '@/app/components/layout/Footer';
-import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
+import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
 
 interface Page {
   _id: string;
@@ -37,105 +34,61 @@ interface Page {
   };
 }
 
-export default function AboutPage() {
-  const { site } = useWebBuilder();
-  const [homePage, setHomePage] = useState<Page | null>(null);
-  const [loading, setLoading] = useState(true);
+// Enable ISR - revalidate every hour (3600 seconds)
+export const revalidate = 3600;
 
-  useEffect(() => {
-    const fetchHomePage = async () => {
-      try {
-        console.log('=== Fetching Home Page Data ===');
-        console.log('Site ID:', site?._id);
-        
-        if (!site?._id) {
-          console.log('No site ID available');
-          setLoading(false);
-          return;
-        }
-
-        // Get auth token from localStorage - try multiple possible keys
-        const token = localStorage.getItem('accessToken') || 
-                      localStorage.getItem('token') || 
-                      localStorage.getItem('auth_token');
-        console.log('Auth token available:', !!token);
-        console.log('Token key used:', token ? (localStorage.getItem('accessToken') ? 'accessToken' : localStorage.getItem('token') ? 'token' : 'auth_token') : 'none');
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-          console.log('Adding Authorization header');
-        } else {
-          console.log('No token found in localStorage');
-        }
-
-        console.log('Making API call to:', `/api/pages?siteId=${site._id}&pageType=home`);
-        const response = await fetch(`/api/pages?siteId=${site._id}&pageType=home`, {
-          headers,
-        });
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-          console.error('API response not OK:', response.status, response.statusText);
-          setLoading(false);
-          return;
-        }
-        
-        const data = await response.json();
-        console.log('API response data:', data);
-        
-        if (data.success && data.data?.pages?.length > 0) {
-          console.log('Found pages:', data.data.pages.length);
-          console.log('Pages list:', data.data.pages.map((p: Page) => ({ id: p._id, name: p.name, pageType: p.pageType })));
-          
-          // Filter for actual home pages
-          const homePages = data.data.pages.filter((p: Page) => p.pageType === 'home');
-          console.log('Home pages after filtering:', homePages.length);
-          
-          if (homePages.length > 0) {
-            const homePageId = homePages[0]._id;
-            console.log('Fetching full home page data for ID:', homePageId);
-            
-            const homeResponse = await fetch(`/api/pages/${homePageId}`, {
-              headers,
-            });
-            console.log('Home page detail response status:', homeResponse.status);
-            
-            if (!homeResponse.ok) {
-              console.error('Home page detail response not OK:', homeResponse.status);
-              setLoading(false);
-              return;
-            }
-            
-            const homeData = await homeResponse.json();
-            console.log('Full home page data:', homeData);
-            
-            if (homeData.success && homeData.data?.page) {
-              console.log('Setting home page data:', homeData.data.page);
-              console.log('Home page aboutSection:', homeData.data.page.aboutSection);
-              setHomePage(homeData.data.page);
-            } else {
-              console.log('No page data in response');
-            }
-          } else {
-            console.log('No home pages found after filtering');
-          }
-        } else {
-          console.log('No pages found or API returned no data');
-        }
-      } catch (err) {
-        console.error('Error fetching home page:', err);
-      } finally {
-        setLoading(false);
-        console.log('=== Fetch Complete ===');
+async function getHomePageData(): Promise<{ site: any; homePage: Page | null }> {
+  try {
+    const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
+    
+    // Fetch site
+    const siteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/public/sites/${siteSlug}`, {
+      next: { revalidate: 3600 }
+    });
+    
+    if (!siteResponse.ok) return { site: null, homePage: null };
+    
+    const siteData = await siteResponse.json();
+    if (!siteData.success || !siteData.data) return { site: null, homePage: null };
+    
+    const site = siteData.data;
+    
+    // Fetch pages
+    const pagesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/public/sites/${site.slug}/pages`, {
+      next: { revalidate: 3600 }
+    });
+    
+    if (!pagesResponse.ok) return { site, homePage: null };
+    
+    const pagesData = await pagesResponse.json();
+    if (!pagesData.success || !pagesData.data) return { site, homePage: null };
+    
+    const pages: Page[] = pagesData.data;
+    const homePage = pages.find(p => p.pageType === 'home');
+    
+    if (homePage?._id) {
+      // Fetch full home page data
+      const pageResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/public/sites/${site.slug}/pages/${homePage._id}`, {
+        next: { revalidate: 3600 }
+      });
+      
+      if (!pageResponse.ok) return { site, homePage: null };
+      
+      const pageData = await pageResponse.json();
+      if (pageData.success && pageData.data?.page) {
+        return { site, homePage: pageData.data.page };
       }
-    };
+    }
+    
+    return { site, homePage: homePage || null };
+  } catch (error) {
+    console.error('Error fetching home page:', error);
+    return { site: null, homePage: null };
+  }
+}
 
-    fetchHomePage();
-  }, [site?._id]);
+export default async function AboutPage() {
+  const { site, homePage } = await getHomePageData();
 
   // Default configurations for about page sections (fallback)
   const defaultAboutSection = {
@@ -173,7 +126,7 @@ export default function AboutPage() {
   };
 
   // Use home page data if available, otherwise use defaults
-  const aboutSection = homePage?.aboutSection?.enabled 
+  const aboutSection = homePage?.aboutSection?.enabled
     ? { ...homePage.aboutSection, features: homePage.aboutSection.features || [] }
     : defaultAboutSection;
   const serviceHighlightsSection = homePage?.serviceHighlightsSection?.enabled
@@ -185,8 +138,25 @@ export default function AboutPage() {
     : defaultServiceHighlightsSection;
   const ctaSection = homePage?.ctaSection?.enabled ? homePage.ctaSection : defaultCtaSection;
 
+  const themeColors = {
+    primary: site?.theme?.darkPrimaryColor || '#000000',
+    secondary: site?.theme?.darkSecondaryColor || '#EF4444',
+    accent: site?.theme?.lightPrimaryColor || '#3B82F6',
+    mainText: site?.theme?.darkPrimaryColor || '#1F2937',
+    secondaryText: site?.theme?.darkSecondaryColor || '#6B7280',
+    pageBackground: site?.theme?.pageBackgroundColor || '#FFFFFF',
+    sectionBackground: site?.theme?.sectionBackgroundColorLight || '#F9FAFB',
+    hoverActive: site?.theme?.hoverActiveColorLight || '#2563EB',
+    inactive: site?.theme?.inactiveColorLight || '#9CA3AF',
+  };
+
+  const themeFonts = {
+    heading: site?.theme?.headingFont,
+    body: site?.theme?.bodyFont,
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: themeColors.pageBackground, fontFamily: themeFonts.body }}>
       {/* Header */}
       <Header />
 

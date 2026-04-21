@@ -31,7 +31,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Send to backend API which will handle SMTP email sending
-    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!backendUrl) {
+      throw new Error('NEXT_PUBLIC_API_BASE_URL environment variable is required');
+    }
     
     try {
       const response = await fetch(`${backendUrl}/api/contact`, {

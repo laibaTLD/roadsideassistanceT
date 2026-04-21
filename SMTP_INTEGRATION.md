@@ -30,15 +30,15 @@ This template is fully integrated with the web builder's SMTP system for handlin
 ## Configuration
 
 ### Environment Variables
-Create a `.env.local` file based on `.env.local.example`:
+Create a `.env` file with the following required variables:
 
 ```env
-# Backend API URL for SMTP integration
-BACKEND_API_URL=http://localhost:5000
+# API Configuration (Required)
+NEXT_PUBLIC_API_BASE_URL=https://your-api-domain.com/api
 
-# Site configuration
+# Site Configuration (Required)
 NEXT_PUBLIC_WEBBUILDER_SITE_SLUG=your-site-slug
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
 ```
 
 ### SMTP Settings

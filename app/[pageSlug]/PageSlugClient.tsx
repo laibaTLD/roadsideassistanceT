@@ -1,8 +1,5 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useThemeColors } from '@/app/hooks/useTheme';
 import { Header } from '@/app/components/layout/Header';
 import { Footer } from '@/app/components/layout/Footer';
@@ -19,74 +16,24 @@ import { CTA2Section } from '@/app/components/sections/CTA2Section';
 import { CTA3Section } from '@/app/components/sections/CTA3Section';
 import { ServingAreasSection } from '@/app/components/sections/ServingAreasSection';
 import { GallerySection } from '@/app/components/sections/GallerySection';
-import api from '@/app/lib/fetch-api';
+import { Page } from '@/app/lib/types';
 
 interface PageSlugClientProps {
   pageSlug: string;
+  page: Page | null;
+  serviceArea: any | null;
 }
 
-export default function PageSlugClient({ pageSlug: pageSlugProp }: PageSlugClientProps) {
-  const params = useParams();
-  const pageSlug = params.pageSlug as string || pageSlugProp;
-  const { pages, currentPage, setCurrentPage, loading, error, site } = useWebBuilder();
+export default function PageSlugClient({ page, serviceArea }: PageSlugClientProps) {
   const themeColors = useThemeColors();
-  const [serviceAreaPage, setServiceAreaPage] = useState<any | null>(null);
-  const [serviceAreaLoading, setServiceAreaLoading] = useState(false);
-  const [serviceAreaError, setServiceAreaError] = useState<string | null>(null);
-  const hasAttemptedLoad = useRef(false);
 
-  // Load service area page
-  const loadServiceAreaPage = useCallback(async () => {
-    if (!site || hasAttemptedLoad.current) return;
-
-    hasAttemptedLoad.current = true;
-    setServiceAreaLoading(true);
-    setServiceAreaError(null);
-
-    try {
-      const response = await api.get(`/public/sites/${site.slug}/service-areas/${pageSlug}`);
-      if (response.success) {
-        setServiceAreaPage(response.data);
-      } else {
-        setServiceAreaPage(null);
-      }
-    } catch (err) {
-      setServiceAreaError('Failed to load service area page');
-    } finally {
-      setServiceAreaLoading(false);
-    }
-  }, [site, pageSlug]);
-
-  useEffect(() => {
-    if (pages.length === 0) return;
-
-    const foundPage = pages.find(page => page.slug === pageSlug);
-    if (foundPage) {
-      setCurrentPage(foundPage);
-      setServiceAreaPage(null);
-    } else {
-      setCurrentPage(null);
-      if (!hasAttemptedLoad.current) {
-        loadServiceAreaPage();
-      }
-    }
-  }, [pageSlug, pages, setCurrentPage, loadServiceAreaPage]);
-
-  if (loading || serviceAreaLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: themeColors.pageBackground }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: themeColors.primaryButton }}></div>
-      </div>
-    );
-  }
-
-  const displayPage = currentPage || serviceAreaPage;
+  const displayPage = page || serviceArea;
 
   if (!displayPage) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center" style={{ backgroundColor: themeColors.pageBackground }}>
         <h2 className="text-2xl font-bold mb-2" style={{ color: themeColors.lightPrimaryText }}>Page Not Found</h2>
-        <p style={{ color: themeColors.lightSecondaryText }}>The page "{pageSlug}" could not be found.</p>
+        <p style={{ color: themeColors.lightSecondaryText }}>The page could not be found.</p>
         <a href="/" className="mt-8 hover:underline" style={{ color: themeColors.primaryButton }}>Return Home</a>
       </div>
     );

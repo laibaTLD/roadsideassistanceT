@@ -38,8 +38,6 @@ export const Header: React.FC = () => {
 
   const businessName = site?.business?.name || site?.name || '';
 
-  // Get navigation links from site data only
-  const navLinks = site?.footer?.columns?.[0]?.links?.slice(0, 4) || [];
 
   return (
     <>
@@ -68,18 +66,7 @@ export const Header: React.FC = () => {
             )}
           </Link>
 
-          {/* CENTER - Navigation - Vertical Column, Upside Down */}
-          <nav className="hidden md:flex flex-col items-center gap-3 absolute left-1/2 -translate-x-1/2 rotate-180">
-            {navLinks.map((link) => (
-              <a 
-                key={link.label}
-                href={link.url} 
-                className="nav-item text-[11px] text-[#5A7986] hover:text-[#2D434D] transition-colors tracking-[0.1em] uppercase rotate-180"
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
+         
 
           {/* RIGHT - Social Links + Menu */}
           <div className="flex items-center gap-6 z-[110]">
@@ -115,11 +102,7 @@ export const Header: React.FC = () => {
           </nav>
       </div>
 
-      <style jsx global>{`
-        body {
-          overflow: ${isMenuOpen ? 'hidden' : 'auto'};
-        }
-      `}</style>
+     
     </>
   );
 };
