@@ -5,7 +5,7 @@ import { BlogPost } from '@/app/lib/types';
 import { Header } from '@/app/components/layout/Header';
 import { Footer } from '@/app/components/layout/Footer';
 import { TiptapRenderer } from '@/app/components/ui/TiptapRenderer';
-import { getImageSrc } from '@/app/lib/utils';
+import { getImageSrc, cn } from '@/app/lib/utils';
 import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
 import { ArrowLeft } from 'lucide-react';
 
@@ -108,13 +108,18 @@ export default function BlogPostClient({ post, site, otherPosts, themeColors, th
                     </div>
                 </div>
 
-                {otherPosts.length > 0 && (
+                {otherPosts && otherPosts.length > 0 && (
                     <section className="py-24 lg:py-32" style={{ backgroundColor: `rgba(0, 0, 0, 0.02)` }}>
                         <div className="container mx-auto px-6 lg:px-12">
                             <h3 className="text-[11px] uppercase tracking-[0.6em] text-center mb-16 opacity-40 text-black" style={{ fontFamily: themeFonts.heading }}>
                                 More Blogs
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-px" style={{ backgroundColor: `rgba(0, 0, 0, 0.1)` }}>
+                            <div className={cn(
+                                "grid gap-px bg-black/10",
+                                otherPosts.length === 1 ? "grid-cols-1 max-w-md mx-auto" : 
+                                otherPosts.length === 2 ? "grid-cols-1 md:grid-cols-2" : 
+                                "grid-cols-1 md:grid-cols-3"
+                            )}>
                                 {otherPosts.map(other => (
                                     <Link
                                         key={other._id}

@@ -1,41 +1,11 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
 import { SeoHead } from '@/app/components/ui/SeoHead';
 import ProjectDetailClient from './ProjectDetailClient';
 import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
-
-// Enable ISR - revalidate every hour (3600 seconds)
-export const revalidate = 3600;
-
-async function getProjectsData(): Promise<{ site: any; projects: any[] }> {
-  try {
-    const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    
-    const siteResponse = await fetch(`${apiUrl}/api/public/sites/${siteSlug}`, {
-      next: { revalidate: 3600 }
-    });
-    
-    if (!siteResponse.ok) return { site: null, projects: [] };
-    
-    const siteData = await siteResponse.json();
-    if (!siteData.success || !siteData.data) return { site: null, projects: [] };
-    
-    const site = siteData.data;
-    
-    const projectsResponse = await fetch(`${apiUrl}/api/public/sites/${site.slug}/projects`, {
-      next: { revalidate: 3600 }
-    });
-    
-    if (!projectsResponse.ok) return { site, projects: [] };
-    
-    const projectsData = await projectsResponse.json();
-    if (!projectsData.success || !projectsData.data) return { site, projects: [] };
-    
-    return { site, projects: projectsData.data };
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    return { site: null, projects: [] };
-  }
-}
+import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
+import { projectApi } from '@/app/lib/api';
 
 function getThemeColors(site: any): ThemeColors {
     return {
@@ -72,17 +42,53 @@ function getThemeFonts(site: any): ThemeFonts {
     };
 }
 
-export default async function ProjectDetailPage() {
-  const { site, projects } = await getProjectsData();
+export default function ProjectDetailPage() {
+  const { site, pages } = useWebBuilder();
+  const [projects, setProjects] = useState<any[]>([]);
+
+  const projectListPage = useMemo(() => pages.find((p) => p.pageType === 'project-detail') || null, [pages]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[project-detail-list] site from WebBuilderProvider:', site);
+    }
+
+    const load = async () => {
+      if (!site?.slug) return;
+
+      try {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[project-detail-list] fetching projects for siteSlug:', site.slug);
+        }
+        const data = await projectApi.getProjectsBySite(site.slug);
+        const published = (data || []).filter((p: any) => p.status === 'published');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[project-detail-list] fetched projects (published):', published);
+        }
+        if (!cancelled) setProjects(published);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        if (!cancelled) setProjects([]);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [site?.slug]);
+
   const siteName = site?.business?.name || site?.name || 'Perspective';
-  const seoTitle = `Projects | ${siteName}`;
-  const themeColors = getThemeColors(site);
-  const themeFonts = getThemeFonts(site);
+  const seoTitle = useMemo(() => `Projects | ${siteName}`, [siteName]);
+  const themeColors = useMemo(() => getThemeColors(site), [site]);
+  const themeFonts = useMemo(() => getThemeFonts(site), [site]);
 
   return (
     <>
       <SeoHead title={seoTitle} canonicalPath="/project-detail" ogType="website" />
-      <ProjectDetailClient site={site} projects={projects} themeColors={themeColors} themeFonts={themeFonts} />
+      <ProjectDetailClient site={site} projects={projects} themeColors={themeColors} themeFonts={themeFonts} pageConfig={projectListPage} />
     </>
   );
 }

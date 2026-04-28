@@ -1,198 +1,114 @@
 'use client';
 
-import { useRef } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Header } from '@/app/components/layout/Header';
 import { Footer } from '@/app/components/layout/Footer';
-import { getImageSrc } from '@/app/lib/utils';
+import { getImageSrc, cn } from '@/app/lib/utils';
 import { SeoHead } from '@/app/components/ui/SeoHead';
 import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useGSAP } from '@gsap/react';
-
-gsap.registerPlugin(ScrollTrigger);
+import { HeroSection } from '@/app/components/sections/HeroSection';
+import { Page } from '@/app/lib/types';
 
 interface ProjectDetailClientProps {
     site: any;
     projects: any[];
     themeColors: ThemeColors;
     themeFonts: ThemeFonts;
+    pageConfig: Page | null;
 }
 
-export default function ProjectDetailClient({ site, projects, themeColors, themeFonts }: ProjectDetailClientProps) {
-
-    const pinWrapRef = useRef<HTMLDivElement>(null);
-    const sectionsRef = useRef<HTMLDivElement>(null);
-
+export default function ProjectDetailClient({ site, projects, themeColors, themeFonts, pageConfig }: ProjectDetailClientProps) {
     const publishedProjects = (projects || []).filter((p: any) => p.status === 'published');
     const siteName = site?.business?.name || site?.name || 'Perspective';
 
-    useGSAP(() => {
-        if (!publishedProjects.length || !sectionsRef.current || !pinWrapRef.current) return;
-
-        const track = sectionsRef.current;
-        const pinWrap = pinWrapRef.current;
-
-        // Wait one frame so the DOM has rendered and scrollWidth is accurate
-        const ctx = gsap.context(() => {
-            ScrollTrigger.create({
-                trigger: pinWrap,
-                start: 'top top',
-                // ✅ end = exact pixel distance the track needs to travel
-                end: () => `+=${track.scrollWidth - pinWrap.offsetWidth}`,
-                pin: true,
-                anticipatePin: 1,
-                scrub: true,          // ✅ boolean = instant sync, no tween lag at all
-                invalidateOnRefresh: true,
-                onUpdate: (self) => {
-                    // ✅ Direct transform — bypass GSAP tween entirely for max perf
-                    const x = -(track.scrollWidth - pinWrap.offsetWidth) * self.progress;
-                    track.style.transform = `translate3d(${x}px, 0px, 0px)`;
-                },
-            });
-        });
-
-        return () => ctx.revert();
-
-    }, { dependencies: [publishedProjects.length] });
+    // Grid columns logic based on count
+    const gridCols = publishedProjects.length === 1 ? 'grid-cols-1 max-w-2xl mx-auto' : 
+                    publishedProjects.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto' : 
+                    'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
 
     return (
         <div style={{ backgroundColor: themeColors.pageBackground }}>
             <SeoHead title={`Projects | ${siteName}`} canonicalPath="/project-detail" ogType="website" />
             <Header />
 
-            {/* ── Hero section — edit freely ─────────────────────────── */}
-            <section
-                className="h-screen w-full flex flex-col items-center justify-center gap-6"
-                style={{ backgroundColor: themeColors.sectionBackgroundDark }}
-            >
-                <h1
-                    className="text-5xl lg:text-8xl font-light tracking-tighter text-center"
-                    style={{ color: themeColors.darkPrimaryText, fontFamily: themeFonts.heading }}
-                >
-                    {siteName}
-                </h1>
-                <p
-                    className="text-xs uppercase tracking-[0.5em]"
-                    style={{ color: themeColors.primaryButton, fontFamily: themeFonts.body }}
-                >
-                    Scroll to explore
-                </p>
-            </section>
-            {/* ──────────────────────────────────────────────────────── */}
+            {/* Use the page configuration hero if enabled */}
+            {pageConfig?.hero?.enabled && <HeroSection hero={pageConfig.hero} />}
 
-            {/* Pin container — GSAP pins this */}
-            <div
-                ref={pinWrapRef}
-                style={{
-                    height: '100vh',
-                    overflow: 'hidden',
-                    position: 'relative',
-                }}
-            >
-                {/* Track — we move this with translate3d */}
-                <div
-                    ref={sectionsRef}
-                    style={{
-                        display: 'flex',
-                        height: '100%',
-                        width: 'max-content',
-                        willChange: 'transform',
-                        // GPU compositing layer — critical for smooth scrolling
-                        transform: 'translate3d(0px, 0px, 0px)',
-                    }}
-                >
-                    {/* Intro panel */}
-                    <section
-                        className="h-full flex flex-col justify-center px-12 lg:px-20 border-r flex-shrink-0"
-                        style={{
-                            width: 'clamp(280px, 30vw, 480px)',
-                            borderColor: `${themeColors.secondaryText}15`,
-                        }}
-                    >
-                        <h2
-                            className="text-3xl lg:text-5xl font-light tracking-tighter mb-4"
+            <main className="py-24 lg:py-32">
+                <div className="container mx-auto px-6 lg:px-12">
+                    {/* Section Intro */}
+                    <div className="mb-16 lg:mb-24">
+                        <span className="text-[10px] tracking-[0.4em] uppercase font-bold opacity-40 mb-4 block">
+                            Our Portfolio
+                        </span>
+                        <h1 
+                            className="text-4xl md:text-5xl lg:text-7xl font-serif font-light uppercase tracking-tight leading-none"
                             style={{ color: themeColors.lightPrimaryText, fontFamily: themeFonts.heading }}
                         >
-                            {siteName}
-                        </h2>
-                        <p
-                            className="text-xs uppercase tracking-[0.4em] font-medium"
-                            style={{ color: themeColors.primaryButton, fontFamily: themeFonts.body }}
-                        >
                             Selected Projects
-                        </p>
-                    </section>
+                        </h1>
+                    </div>
 
-                    {/* Project cards */}
-                    {publishedProjects.map((project: any) => (
-                        <Link
-                            key={project._id}
-                            href={`/project-detail/${project.slug}`}
-                            className="relative h-full group border-r overflow-hidden flex-shrink-0"
-                            style={{
-                                width: 'clamp(320px, 45vw, 800px)',
-                                borderColor: `${themeColors.secondaryText}15`,
-                            }}
-                        >
-                            <div className="absolute inset-0 bg-zinc-100 overflow-hidden">
-                                {project.featuredImage ? (
-                                    <img
-                                        src={getImageSrc(project.featuredImage.url)}
-                                        alt={project.title}
-                                        className="w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-110"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center opacity-20">
-                                        No Image
+                    {/* Projects Grid */}
+                    {publishedProjects.length > 0 ? (
+                        <div className={cn("grid gap-12 lg:gap-16", gridCols)}>
+                            {publishedProjects.map((project: any, idx) => (
+                                <Link
+                                    key={project._id}
+                                    href={`/project-detail/${project.slug}`}
+                                    className="group flex flex-col h-full"
+                                >
+                                    <div className="relative aspect-[16/10] overflow-hidden mb-8 shadow-xl group-hover:shadow-2xl transition-all duration-700 bg-black/5">
+                                        {project.featuredImage ? (
+                                            <img
+                                                src={getImageSrc(project.featuredImage.url)}
+                                                alt={project.title}
+                                                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center opacity-20">
+                                                No Image
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500" />
+                                        
+                                        {project.category && (
+                                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
+                                                <span className="text-[9px] uppercase tracking-widest font-bold text-black">{project.category}</span>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors duration-500" />
-                            </div>
 
-                            {project.category && (
-                                <div
-                                    className="absolute top-12 right-[-40px] rotate-45 w-40 py-1 text-center shadow-lg"
-                                    style={{
-                                        backgroundColor: themeColors.primaryButton,
-                                        color: '#fff',
-                                        fontSize: '10px',
-                                        fontWeight: 'bold',
-                                        letterSpacing: '0.2em',
-                                        zIndex: 10,
-                                    }}
-                                >
-                                    {project.category.toUpperCase()}
-                                </div>
-                            )}
-
-                            <div className="absolute bottom-0 left-0 w-full p-12 lg:p-16 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
-                                <h2
-                                    className="text-3xl lg:text-4xl uppercase tracking-[0.1em] mb-2"
-                                    style={{ color: themeColors.pageBackground, fontFamily: themeFonts.heading }}
-                                >
-                                    {project.title}
-                                </h2>
-                                <div className="flex flex-col gap-1">
-                                    <span
-                                        className="text-xs uppercase tracking-[0.3em] opacity-80"
-                                        style={{ color: themeColors.pageBackground, fontFamily: themeFonts.body }}
-                                    >
-                                        {project.location || 'Location'}
-                                    </span>
-                                    <div
-                                        className="w-0 group-hover:w-full h-[1px] transition-all duration-1000 ease-in-out"
-                                        style={{ backgroundColor: themeColors.pageBackground }}
-                                    />
-                                </div>
-                            </div>
-                        </Link>
-                    ))}
-
-                    <div className="h-full flex-shrink-0" style={{ width: '10vw' }} />
+                                    <div className="mt-auto">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <span className="text-[10px] tracking-[0.4em] uppercase font-bold opacity-30">
+                                                {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                                            </span>
+                                            {project.location && (
+                                                <span className="text-[9px] uppercase tracking-[0.2em] font-medium opacity-60">
+                                                    {project.location}
+                                                </span>
+                                            )}
+                                        </div>
+                                        
+                                        <h2 
+                                            className="text-xl lg:text-2xl font-serif font-medium tracking-tight uppercase leading-tight group-hover:opacity-70 transition-opacity" 
+                                            style={{ color: themeColors.lightPrimaryText, fontFamily: themeFonts.heading }}
+                                        >
+                                            {project.title}
+                                        </h2>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-20 text-center opacity-40 uppercase tracking-widest text-sm">
+                            No projects found
+                        </div>
+                    )}
                 </div>
-            </div>
+            </main>
 
             <Footer />
         </div>

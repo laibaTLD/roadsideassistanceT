@@ -2,43 +2,34 @@ import { Metadata } from 'next'
 import { generateMetadata as buildMetadata, getServiceSeoData } from '@/app/lib/metadata'
 import { Service, Site } from '@/app/lib/types'
 import ServiceClient from './ServiceClient'
+import { siteApi, serviceApi } from '@/app/lib/api'
 
 interface ServicePageProps {
-  params: { serviceSlug: string }
+  params: Promise<{ serviceSlug: string }>
 }
 
-// Enable ISR - revalidate every hour (3600 seconds)
-export const revalidate = 3600;
+// Use SSR instead of ISR - fetch fresh data on every request
+export const dynamic = 'force-dynamic';
 
 async function getServiceData(serviceSlug: string): Promise<{ site: Site | null; service: Service | null }> {
   try {
     const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!siteSlug) return { site: null, service: null };
+
+    const site = await siteApi.getSiteBySlug(siteSlug);
+    if (!site?.slug) return { site: null, service: null };
     
-    const siteResponse = await fetch(`${apiUrl}/api/public/sites/${siteSlug}`, {
-      next: { revalidate: 3600 }
-    });
+    // Try to get service by slug directly using the API utility
+    let service: Service | null = null;
+    try {
+      service = await serviceApi.getServiceBySlug(site.slug, serviceSlug);
+    } catch (e) {
+      // If direct slug fetch fails, fallback to fetching all services
+      const services = await serviceApi.getServicesBySite(site.slug);
+      service = services.find((s: any) => s.slug === serviceSlug) || null;
+    }
     
-    if (!siteResponse.ok) return { site: null, service: null };
-    
-    const siteData = await siteResponse.json();
-    if (!siteData.success || !siteData.data) return { site: null, service: null };
-    
-    const site = siteData.data;
-    
-    const servicesResponse = await fetch(`${apiUrl}/api/public/sites/${site.slug}/services`, {
-      next: { revalidate: 3600 }
-    });
-    
-    if (!servicesResponse.ok) return { site, service: null };
-    
-    const servicesData = await servicesResponse.json();
-    if (!servicesData.success || !servicesData.data) return { site, service: null };
-    
-    const services = servicesData.data;
-    const service = services.find((s: any) => s.slug === serviceSlug);
-    
-    return { site, service: service || null };
+    return { site, service };
   } catch (error) {
     console.error('Error fetching service data:', error);
     return { site: null, service: null };
@@ -46,7 +37,7 @@ async function getServiceData(serviceSlug: string): Promise<{ site: Site | null;
 }
 
 export async function generateMetadata({ params }: ServicePageProps): Promise<Metadata> {
-  const { serviceSlug } = params;
+  const { serviceSlug } = await params;
   const { site, service } = await getServiceData(serviceSlug);
   
   if (!service || !site) {
@@ -60,7 +51,8 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
 }
 
 export default async function ServicePage({ params }: ServicePageProps) {
-  const { site, service } = await getServiceData(params.serviceSlug);
+  const { serviceSlug } = await params;
+  const { site, service } = await getServiceData(serviceSlug);
   
-  return <ServiceClient serviceSlug={params.serviceSlug} service={service} />;
+  return <ServiceClient serviceSlug={serviceSlug} service={service} />;
 }

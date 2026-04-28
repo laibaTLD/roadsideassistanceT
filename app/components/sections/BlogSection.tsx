@@ -7,6 +7,7 @@ import { getImageSrc, cn } from '@/app/lib/utils';
 import { useThemeColors, useThemeFonts } from '@/app/hooks/useTheme';
 import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { CardLoader } from '@/app/components/ui/SkeletonLoader';
+import Link from 'next/link';
 
 interface BlogSectionProps {
     blogSection: Page['blogSection'];
@@ -14,128 +15,123 @@ interface BlogSectionProps {
 }
 
 export const BlogSection: React.FC<BlogSectionProps> = ({ blogSection, className }) => {
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(0);
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const themeColors = useThemeColors();
     const themeFonts = useThemeFonts();
     const { blogPosts, loading } = useWebBuilder();
 
     if (!blogSection?.enabled) return null;
 
-    const displayPosts = blogPosts.slice(0, blogSection.postsToShow || 3);
+    const displayPosts = blogPosts.slice(0, blogSection.postsToShow || 6);
+
+    // Blog Grid dynamic columns
+    const gridCols = displayPosts.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 
+                    displayPosts.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 
+                    'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
 
     if (loading && blogPosts.length === 0) {
         return (
-            <section className="h-screen w-full flex overflow-hidden">
-                {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex-1 border-r border-black/5 p-12">
-                        <CardLoader />
-                    </div>
-                ))}
+            <section className="py-24 px-6 lg:px-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-black/5">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-white p-12">
+                            <CardLoader />
+                        </div>
+                    ))}
+                </div>
             </section>
         );
     }
 
     return (
         <section 
-            className={cn('relative h-[100vh] min-h-[700px] w-full overflow-hidden flex flex-col md:flex-row', className)}
+            className={cn('relative py-24 lg:py-32 w-full', className)}
             style={{ backgroundColor: themeColors.pageBackground }}
         >
-            {/* Background Image Layer (The "Reveal" Effect) */}
-            <div className="absolute inset-0 z-0 hidden md:block">
-                {displayPosts.map((post, idx) => (
-                    <div
-                        key={`bg-${post._id}`}
-                        className={cn(
-                            "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-                            hoveredIndex === idx ? "opacity-100" : "opacity-0"
-                        )}
-                    >
-                        {post.featuredImage && (
-                            <>
-                                <img
-                                    src={getImageSrc(post.featuredImage.url || (post.featuredImage as any))}
-                                    alt=""
-                                    className="w-full h-full object-cover grayscale-[0.3] brightness-75"
-                                />
-                                {/* Overlay to ensure text readability based on theme */}
-                                <div className="absolute inset-0 bg-black/20" />
-                            </>
-                        )}
-                    </div>
-                ))}
-            </div>
-
-            {/* Content Columns */}
-            {displayPosts.map((post, idx) => (
-                <article
-                    key={post._id}
-                    onMouseEnter={() => setHoveredIndex(idx)}
-                    className="relative z-10 flex-1 flex flex-col justify-between p-8 lg:p-12 border-b md:border-b-0 md:border-r transition-colors duration-500"
-                    style={{ borderColor: `${themeColors.inactive}30` }}
-                >
-                    {/* Top Branding / Logo Space */}
-                    <div className="flex justify-between items-start">
-                        <span 
-                            className="text-[10px] tracking-[0.4em] uppercase font-bold"
-                            style={{ color: '#fff', mixBlendMode: 'difference', fontFamily: themeFonts.body }}
+            <div className="container mx-auto px-6 lg:px-12">
+                {/* Section Header */}
+                <div className="mb-16 lg:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-8">
+                    <div className="max-w-2xl">
+                        <h2 
+                            className="text-4xl md:text-5xl lg:text-6xl font-serif font-light uppercase tracking-tight leading-none mb-6"
+                            style={{ color: themeColors.lightPrimaryText, fontFamily: themeFonts.heading }}
                         >
-                            {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
-                        </span>
-                    </div>
-
-                    {/* Floating Project Card (Center) */}
-                    <div className="relative group w-full max-w-[320px] mx-auto transition-transform duration-700 ease-out transform group-hover:-translate-y-2">
-                         <a href={`/blog/${post.slug}`} className="block relative overflow-hidden aspect-[3/4] shadow-2xl">
-                            {post.featuredImage && (
-                                <img
-                                    src={getImageSrc(post.featuredImage.url || (post.featuredImage as any))}
-                                    alt={post.title}
-                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                                />
-                            )}
-                            {/* "Sold Out" or Status Tag Style */}
-                            <div className="absolute top-4 right-[-35px] bg-red-600 text-white text-[10px] font-bold py-1 px-10 rotate-45 uppercase tracking-widest">
-                                Project
+                            <TiptapRenderer content={blogSection.title || 'Latest Updates'} as="inline" />
+                        </h2>
+                        {blogSection.description && (
+                            <div 
+                                className="text-xs uppercase tracking-[0.3em] opacity-60 max-w-md"
+                                style={{ color: themeColors.lightSecondaryText, fontFamily: themeFonts.body }}
+                            >
+                                <TiptapRenderer content={blogSection.description} />
                             </div>
-                         </a>
+                        )}
                     </div>
+                </div>
 
-                    {/* Bottom Metadata */}
-                    <div className="mt-8">
-                        <h3
-                            className="text-xl lg:text-2xl font-medium tracking-widest uppercase mb-2"
+                {/* Blog Grid */}
+                <div className={cn("grid gap-px bg-black/10 overflow-hidden", gridCols)}>
+                    {displayPosts.map((post, idx) => (
+                        <article
+                            key={post._id}
+                            onMouseEnter={() => setHoveredIndex(idx)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                            className="relative bg-white group flex flex-col h-full transition-colors duration-500 hover:z-10"
                             style={{ 
-                                color: hoveredIndex === idx ? '#fff' : themeColors.lightPrimaryText, 
-                                fontFamily: themeFonts.heading,
-                                mixBlendMode: 'difference'
+                                backgroundColor: themeColors.pageBackground,
+                                borderColor: `${themeColors.inactive}20` 
                             }}
                         >
-                            <a href={`/blog/${post.slug}`}>{post.title}</a>
-                        </h3>
-                        
-                        {post.excerpt && (
-                            <div
-                                className="text-[11px] uppercase tracking-[0.2em] opacity-80"
-                                style={{ 
-                                    color: hoveredIndex === idx ? '#fff' : themeColors.lightSecondaryText, 
-                                    fontFamily: themeFonts.body,
-                                    mixBlendMode: 'difference'
-                                }}
-                            >
-                                <TiptapRenderer content={post.excerpt} />
-                            </div>
-                        )}
-                    </div>
-                </article>
-            ))}
+                            <Link href={`/blog/${post.slug}`} className="flex flex-col h-full p-8 lg:p-12">
+                                {/* Top Meta */}
+                                <div className="flex justify-between items-start mb-12">
+                                    <span 
+                                        className="text-[10px] tracking-[0.4em] uppercase font-bold opacity-30"
+                                        style={{ fontFamily: themeFonts.body }}
+                                    >
+                                        {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                                    </span>
+                                    {post.categories?.[0] && (
+                                        <span className="text-[9px] uppercase tracking-[0.3em] px-3 py-1 bg-black/5 rounded-full">
+                                            {post.categories[0]}
+                                        </span>
+                                    )}
+                                </div>
 
-            {/* Menu Label (Absolute position like the reference) */}
-            <div className="absolute top-8 right-12 z-20 hidden md:flex items-center gap-4">
-                 <span className="text-[10px] tracking-[0.3em] uppercase font-bold" style={{ color: '#fff', mixBlendMode: 'difference' }}>Menu</span>
-                 <div className="flex flex-col gap-1">
-                    <div className="w-6 h-px bg-current" style={{ color: '#fff', mixBlendMode: 'difference' }} />
-                    <div className="w-6 h-px bg-current" style={{ color: '#fff', mixBlendMode: 'difference' }} />
-                 </div>
+                                {/* Image Wrapper */}
+                                <div className="relative overflow-hidden aspect-[4/5] mb-10 shadow-xl group-hover:shadow-2xl transition-all duration-700">
+                                    {post.featuredImage && (
+                                        <img
+                                            src={getImageSrc(post.featuredImage.url || (post.featuredImage as any))}
+                                            alt={post.title}
+                                            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                                        />
+                                    )}
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500" />
+                                </div>
+
+                                {/* Content */}
+                                <div className="mt-auto">
+                                    <h3
+                                        className="text-xl lg:text-2xl font-serif font-medium tracking-tight uppercase mb-4 leading-tight group-hover:opacity-70 transition-opacity"
+                                        style={{ color: themeColors.lightPrimaryText, fontFamily: themeFonts.heading }}
+                                    >
+                                        {post.title}
+                                    </h3>
+                                    
+                                    {post.excerpt && (
+                                        <div
+                                            className="text-[11px] uppercase tracking-[0.2em] leading-relaxed opacity-60 line-clamp-3"
+                                            style={{ color: themeColors.lightSecondaryText, fontFamily: themeFonts.body }}
+                                        >
+                                            <TiptapRenderer content={post.excerpt} />
+                                        </div>
+                                    )}
+                                </div>
+                            </Link>
+                        </article>
+                    ))}
+                </div>
             </div>
         </section>
     );

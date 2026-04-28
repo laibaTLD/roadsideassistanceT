@@ -1,90 +1,38 @@
-import { BlogPost } from '@/app/lib/types';
+'use client';
+
+import { useMemo } from 'react';
 import { SeoHead } from '@/app/components/ui/SeoHead';
-import BlogPageClient from './BlogPageClient';
-import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
+import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
+import { Header } from '@/app/components/layout/Header';
+import { Footer } from '@/app/components/layout/Footer';
+import { HeroSection } from '@/app/components/sections/HeroSection';
+import { BlogSection } from '@/app/components/sections/BlogSection';
+import { Page } from '@/app/lib/types';
 
-// Enable ISR - revalidate every 30 minutes (1800 seconds)
-export const revalidate = 1800;
+export default function BlogPage() {
+  const { site, pages } = useWebBuilder();
 
-async function getBlogPosts(): Promise<{ site: any; posts: BlogPost[] }> {
-    try {
-        const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-        
-        const siteResponse = await fetch(`${apiUrl}/api/public/sites/${siteSlug}`, {
-            next: { revalidate: 1800 }
-        });
-        
-        if (!siteResponse.ok) return { site: null, posts: [] };
-        
-        const siteData = await siteResponse.json();
-        if (!siteData.success || !siteData.data) return { site: null, posts: [] };
-        
-        const site = siteData.data;
-        
-        const postsResponse = await fetch(`${apiUrl}/api/public/sites/${site.slug}/blog-posts`, {
-            next: { revalidate: 1800 }
-        });
-        
-        if (!postsResponse.ok) return { site, posts: [] };
-        
-        const postsData = await postsResponse.json();
-        if (!postsData.success || !postsData.data) return { site, posts: [] };
-        
-        const publishedPosts = postsData.data.filter((post: BlogPost) => post.status === 'published');
-        return { site, posts: publishedPosts };
-    } catch (error) {
-        console.error('Error fetching blog posts:', error);
-        return { site: null, posts: [] };
-    }
-}
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[blog] site from WebBuilderProvider:', site);
+    console.log('[blog] pages from WebBuilderProvider:', pages);
+  }
 
-function getThemeColors(site: any): ThemeColors {
-    return {
-        mainText: 'var(--wb-text-main)',
-        secondaryText: 'var(--wb-text-secondary)',
-        darkPrimaryText: 'var(--wb-text-on-dark)',
-        darkSecondaryText: 'var(--wb-text-on-dark-secondary)',
-        lightPrimaryText: 'var(--wb-text-main)',
-        lightSecondaryText: 'var(--wb-text-secondary)',
-        pageBackground: 'var(--wb-page-bg)',
-        sectionBackground: 'var(--wb-section-bg-light)',
-        sectionBackgroundLight: 'var(--wb-section-bg-light)',
-        sectionBackgroundDark: 'var(--wb-section-bg-dark)',
-        cardBackground: 'var(--wb-card-bg-light)',
-        cardBackgroundLight: 'var(--wb-card-bg-light)',
-        cardBackgroundDark: 'var(--wb-card-bg-dark)',
-        primaryButton: 'var(--wb-primary)',
-        primaryButtonLight: 'var(--wb-primary)',
-        primaryButtonDark: 'var(--wb-primary)',
-        hoverActive: 'var(--wb-primary-hover)',
-        hoverActiveLight: 'var(--wb-primary-hover)',
-        hoverActiveDark: 'var(--wb-primary-hover)',
-        inactive: 'var(--color-gray-400)',
-        inactiveLight: 'var(--color-gray-300)',
-        inactiveDark: 'var(--color-gray-600)',
-        accent: 'var(--wb-primary)',
-    };
-}
+  const blogListPage = useMemo(() => pages.find((p: Page) => p.pageType === 'blog-list') || null, [pages]);
 
-function getThemeFonts(site: any): ThemeFonts {
-    return {
-        heading: site?.theme?.headingFont,
-        body: site?.theme?.bodyFont,
-    };
-}
+  const siteName = site?.business?.name || site?.name || 'Blog';
+  const seoTitle = useMemo(() => `Blog | ${siteName}`, [siteName]);
 
-export default async function BlogPage() {
-    const { site, posts } = await getBlogPosts();
-    const siteName = site?.business?.name || site?.name || 'Caledonian';
-    const seoTitle = `Projects | ${siteName}`;
-    const themeColors = getThemeColors(site);
-    const themeFonts = getThemeFonts(site);
-
-    return (
-        <>
-            <SeoHead title={seoTitle} canonicalPath="/blog" ogType="website" />
-            <BlogPageClient site={site} posts={posts} themeColors={themeColors} themeFonts={themeFonts} />
-        </>
-    );
+  return (
+    <>
+      <SeoHead title={seoTitle} canonicalPath="/blog" ogType="website" />
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1">
+          {blogListPage?.hero?.enabled && <HeroSection hero={blogListPage.hero} />}
+          {blogListPage?.blogSection?.enabled && <BlogSection blogSection={blogListPage.blogSection} />}
+        </main>
+        <Footer />
+      </div>
+    </>
+  );
 }

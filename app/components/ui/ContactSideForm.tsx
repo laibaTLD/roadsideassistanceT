@@ -71,7 +71,12 @@ export const ContactSideForm: React.FC<ContactSideFormProps> = ({ isOpen, onClos
     setSubmitMessage('');
     
     try {
-      const response = await fetch('/api/contact', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!apiUrl) {
+        throw new Error('API base URL not configured');
+      }
+      
+      const response = await fetch(`${apiUrl}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

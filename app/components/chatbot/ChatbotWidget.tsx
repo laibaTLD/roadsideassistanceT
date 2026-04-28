@@ -58,7 +58,7 @@ export const ChatbotWidget: React.FC = () => {
 
   // Position classes
   const positionClasses = {
-    'bottom-right': 'bottom-10 right-20',
+    'bottom-right': 'bottom-5 right-5',
     'bottom-left': 'bottom-6 left-6',
     'top-right': 'top-6 right-6',
     'top-left': 'top-6 left-6'
@@ -67,8 +67,7 @@ export const ChatbotWidget: React.FC = () => {
   const currentPosition = positionClasses[position];
 
   return (
-   <div>
-     <div className={`fixed ${currentPosition} z-50`}>
+    <div className={`fixed ${currentPosition} z-50 flex flex-col items-end`}>
       {/* Chat Window */}
       {isOpen && (
         <div
@@ -111,6 +110,9 @@ export const ChatbotWidget: React.FC = () => {
                 </div>
               </div>
             </div>
+            <button onClick={closeChat} className="text-white/80 hover:text-white transition-colors">
+              <X size={18} />
+            </button>
           </div>
 
           {/* Messages Area */}
@@ -229,7 +231,31 @@ export const ChatbotWidget: React.FC = () => {
         </div>
       )}
 
-      
+      {/* Floating Toggle Button */}
+      <button
+        onClick={toggleChat}
+        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
+          isOpen ? 'rotate-180' : 'rotate-0'
+        }`}
+        style={{
+          background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+          boxShadow: `0 4px 20px ${secondaryColor}50`,
+          animation: isOpen ? '' : 'pulse 2s infinite'
+        }}
+        aria-label={isOpen ? 'Close chat' : 'Open chat'}
+      >
+        {isOpen ? (
+          <X className="w-6 h-6 text-white" />
+        ) : transformedIconUrl ? (
+          <img
+            src={transformedIconUrl}
+            alt={botName}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+        ) : (
+          <MessageCircle className="w-6 h-6 text-white" />
+        )}
+      </button>
 
       {/* Combined styles */}
       <style jsx>{`
@@ -264,32 +290,5 @@ export const ChatbotWidget: React.FC = () => {
         }
       `}</style>
     </div>
-
-    {/* Floating Toggle Button */}
-      <button
-        onClick={toggleChat}
-        className={`absolute z-50 bottom-5 right-5 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
-          isOpen ? 'rotate-180' : 'rotate-0'
-        }`}
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-          boxShadow: `0 4px 20px ${secondaryColor}50`,
-          animation: isOpen ? '' : 'pulse 2s infinite'
-        }}
-        aria-label={isOpen ? 'Close chat' : 'Open chat'}
-      >
-       {isOpen ? (
-  <X className="w-6 h-6 text-white" />
-) : transformedIconUrl ? (
-  <img
-    src={transformedIconUrl}
-    alt={botName}
-    className="w-8 h-8 rounded-full object-cover"
-  />
-) : (
-  <MessageCircle className="w-6 h-6 text-white" />
-)}
-      </button>
-   </div>
   );
 };

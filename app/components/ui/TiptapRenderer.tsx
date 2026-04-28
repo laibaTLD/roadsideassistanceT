@@ -22,6 +22,8 @@ const isBlockNode = (node: any): boolean => {
 const getFullImageUrl = (url?: string): string | undefined => {
   if (!url) return undefined;
   if (url.startsWith('http')) return url;
+  if (url.startsWith('/uploads')) return url;
+  if (url.startsWith('/api/uploads')) return url;
   if (url.startsWith('/')) return url;
   return `/uploads/${url}`;
 };

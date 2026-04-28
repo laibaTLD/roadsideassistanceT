@@ -1,113 +1,15 @@
-import { Metadata } from 'next'
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { SeoHead } from '@/app/components/ui/SeoHead';
 import { normalizeSeoImage, tiptapToText, truncate } from '@/app/lib/seo';
 import ProjectDetailSlugClient from './ProjectDetailSlugClient';
 import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
+import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
+import { projectApi } from '@/app/lib/api';
 
-interface ProjectDetailSlugPageProps {
-  params: { projectSlug: string }
-}
 
-// Enable ISR - revalidate every hour (3600 seconds)
-export const revalidate = 3600;
-
-async function getProject(projectSlug: string): Promise<{ project: any; site: any; otherProjects: any[] }> {
-  try {
-    const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    
-    const siteResponse = await fetch(`${apiUrl}/api/public/sites/${siteSlug}`, {
-      next: { revalidate: 3600 }
-    });
-    
-    if (!siteResponse.ok) return { project: null, site: null, otherProjects: [] };
-    
-    const siteData = await siteResponse.json();
-    if (!siteData.success || !siteData.data) return { project: null, site: null, otherProjects: [] };
-    
-    const site = siteData.data;
-    
-    const projectResponse = await fetch(`${apiUrl}/api/public/sites/${site.slug}/projects/${projectSlug}`, {
-      next: { revalidate: 3600 }
-    });
-    
-    if (!projectResponse.ok) return { project: null, site, otherProjects: [] };
-    
-    const projectData = await projectResponse.json();
-    if (!projectData.success || !projectData.data) return { project: null, site, otherProjects: [] };
-    
-    const project = projectData.data;
-    
-    const allProjectsResponse = await fetch(`${apiUrl}/api/public/sites/${site.slug}/projects`, {
-      next: { revalidate: 3600 }
-    });
-    
-    if (!allProjectsResponse.ok) return { project, site, otherProjects: [] };
-    
-    const allProjectsData = await allProjectsResponse.json();
-    if (!allProjectsData.success || !allProjectsData.data) return { project, site, otherProjects: [] };
-    
-    const otherProjects = allProjectsData.data
-      .filter((p: any) => p.status === 'published' && p.slug !== projectSlug)
-      .slice(0, 3);
-    
-    return { project, site, otherProjects };
-  } catch (error) {
-    console.error('Error fetching project:', error);
-    return { project: null, site: null, otherProjects: [] };
-  }
-}
-
-export async function generateStaticParams() {
-  try {
-    const siteSlug = process.env.NEXT_PUBLIC_WEBBUILDER_SITE_SLUG;
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    
-    const response = await fetch(`${apiUrl}/api/public/sites/${siteSlug}/projects`);
-    
-    if (!response.ok) return [];
-    
-    const data = await response.json();
-    if (!data.success || !data.data) return [];
-    
-    const projects = data.data.filter((p: any) => p.status === 'published');
-    
-    return projects.map((project: any) => ({
-      projectSlug: project.slug,
-    }));
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return [];
-  }
-}
-
-export async function generateMetadata({ params }: ProjectDetailSlugPageProps): Promise<Metadata> {
-  const { projectSlug } = params;
-  const { project, site } = await getProject(projectSlug);
-  
-  if (!project || !site) {
-    return {
-      title: 'Project Not Found',
-      description: 'The requested project could not be found.',
-    };
-  }
-  
-  const siteName = site?.business?.name || site?.name || 'Perspective';
-  const seoTitle = `${project.seo?.title || project.title} | ${siteName}`;
-  const seoDescription = truncate(project.seo?.description || tiptapToText(project.shortDescription) || tiptapToText(project.description), 160);
-  const ogImage = normalizeSeoImage(project.seo?.ogImageUrl || project.featuredImage?.url, project.title);
-  
-  return {
-    title: seoTitle,
-    description: seoDescription,
-    openGraph: {
-      title: seoTitle,
-      description: seoDescription,
-      images: ogImage ? [{ url: ogImage as unknown as string }] : undefined,
-      type: 'article',
-    },
-  };
-}
 
 function getThemeColors(site: any): ThemeColors {
     return {
@@ -144,25 +46,87 @@ function getThemeFonts(site: any): ThemeFonts {
     };
 }
 
-export default async function ProjectDetailSlugPage({ params }: ProjectDetailSlugPageProps) {
-  const { projectSlug } = params;
-  const { project, site, otherProjects } = await getProject(projectSlug);
-  
+export default function ProjectDetailSlugPage() {
+  const params = useParams<{ projectSlug: string }>();
+  const projectSlug = params?.projectSlug;
+  const { site, pages } = useWebBuilder();
+
+  const [project, setProject] = useState<any | null>(null);
+  const [otherProjects, setOtherProjects] = useState<any[]>([]);
+
+  const projectDetailPage = useMemo(() => pages.find((p) => p.pageType === 'project-detail') || null, [pages]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[project-detail] params:', { projectSlug });
+      console.log('[project-detail] site from WebBuilderProvider:', site);
+    }
+
+    const load = async () => {
+      if (!site?.slug || !projectSlug) return;
+
+      try {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[project-detail] fetching project:', { siteSlug: site.slug, projectSlug });
+        }
+        const fetchedProject = await projectApi.getProjectBySlug(site.slug, projectSlug);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[project-detail] fetched project:', fetchedProject);
+        }
+        if (!cancelled) setProject(fetchedProject);
+
+        const allProjects = await projectApi.getProjectsBySite(site.slug);
+        const others = (allProjects || [])
+          .filter((p: any) => p.status === 'published' && p.slug !== projectSlug)
+          .slice(0, 3);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[project-detail] other projects:', others);
+        }
+        if (!cancelled) setOtherProjects(others);
+      } catch (error) {
+        console.error('Error fetching project:', error);
+        if (!cancelled) {
+          setProject(null);
+          setOtherProjects([]);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [site?.slug, projectSlug]);
+
+  const siteName = site?.business?.name || site?.name || 'Perspective';
+  const seoTitle = useMemo(() => {
+    if (!project) return siteName;
+    return `${project.seo?.title || project.title} | ${siteName}`;
+  }, [project?.seo?.title, project?.title, siteName]);
+
+  const seoDescription = useMemo(() => {
+    if (!project) return '';
+    return truncate(project.seo?.description || tiptapToText(project.shortDescription) || tiptapToText(project.description), 160);
+  }, [project?.seo?.description, project?.shortDescription, project?.description]);
+
+  const ogImage = useMemo(() => {
+    if (!project) return undefined;
+    return normalizeSeoImage(project.seo?.ogImageUrl || project.featuredImage?.url, project.title);
+  }, [project?.seo?.ogImageUrl, project?.featuredImage?.url, project?.title]);
+
+  const themeColors = useMemo(() => getThemeColors(site), [site]);
+  const themeFonts = useMemo(() => getThemeFonts(site), [site]);
+
   if (!project) {
     return <div className="min-h-screen flex items-center justify-center text-red-500 uppercase tracking-widest">Project Not Found</div>;
   }
-  
-  const siteName = site?.business?.name || site?.name || 'Perspective';
-  const seoTitle = `${project.seo?.title || project.title} | ${siteName}`;
-  const seoDescription = truncate(project.seo?.description || tiptapToText(project.shortDescription) || tiptapToText(project.description), 160);
-  const ogImage = normalizeSeoImage(project.seo?.ogImageUrl || project.featuredImage?.url, project.title);
-  const themeColors = getThemeColors(site);
-  const themeFonts = getThemeFonts(site);
-  
+
   return (
     <>
       <SeoHead title={seoTitle} description={seoDescription} canonicalPath={`/project-detail/${project.slug}`} ogType="article" ogImage={ogImage} />
-      <ProjectDetailSlugClient project={project} site={site} otherProjects={otherProjects} themeColors={themeColors} themeFonts={themeFonts} />
+      <ProjectDetailSlugClient project={project} site={site} otherProjects={otherProjects} themeColors={themeColors} themeFonts={themeFonts} pageConfig={projectDetailPage} />
     </>
   );
 }

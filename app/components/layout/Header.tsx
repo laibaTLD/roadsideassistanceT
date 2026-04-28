@@ -89,14 +89,22 @@ export const Header: React.FC = () => {
       >
           {/* CENTER - Navigation - Vertical Column, Upside Down */}
           <nav className="flex flex-col items-center gap-3 absolute left-1/2 -translate-x-1/2">
-            {['Home', 'About', 'Contact', 'Services', 'Blog', 'Project Detail', 'Testimonials'].map((item) => (
+            {[
+              { label: 'Home', href: '/' },
+              { label: 'About', href: '/about-us' },
+              { label: 'Contact', href: '/contact-us' },
+              { label: 'Services', href: '/services' },
+              { label: 'Blog', href: '/blog' },
+              { label: 'Project Detail', href: '/project-detail' },
+              { label: 'Testimonials', href: '/testimonials' }
+            ].map((item) => (
               <Link
-                key={item}
-                href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(/\s+/g, '-')}`}
+                key={item.label}
+                href={item.href}
                 onClick={() => setIsMenuOpen(false)}
                 className="nav-item-large text-3xl md:text-5xl font-serif text-[#2D434D] hover:text-[#5A7986] transition-colors rotate-180"
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </nav>

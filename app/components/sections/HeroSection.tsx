@@ -100,15 +100,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ hero, className }) => 
 
       {/* CONTENT OVERLAY - Left side */}
       <div className="relative z-10 w-[45%] h-full flex flex-col justify-center px-16 py-12">
-        {/* Decorative Script "The" - very light */}
-        <span className="hero-the font-serif italic text-2xl md:text-3xl text-[#A8BCC4] mb-1 font-extralight">
-          The
-        </span>
-        
-        {/* "Future of" in script */}
-        <h2 className="hero-future font-serif italic text-4xl md:text-5xl text-[#5A7986] mb-0 leading-tight">
-          Future <span className="text-xl md:text-2xl">of</span>
-        </h2>
         
         {/* Main Title from database - bold serif */}
         {hero.title && (

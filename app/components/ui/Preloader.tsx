@@ -29,8 +29,6 @@ const Preloader: React.FC = () => {
   const accent = themeColors.primaryButton || '#FFB020';
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-
     const ctx = gsap.context(() => {
 
       const tl = gsap.timeline({

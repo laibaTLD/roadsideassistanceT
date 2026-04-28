@@ -8,8 +8,8 @@ interface ServiceAreaPageProps {
   params: { serviceSlug: string; citySlug: string }
 }
 
-// Enable ISR - revalidate every hour (3600 seconds)
-export const revalidate = 3600;
+// Use SSR instead of ISR - fetch fresh data on every request
+export const dynamic = 'force-dynamic';
 
 async function getServiceAreaData(serviceSlug: string, citySlug: string): Promise<{ site: Site | null; serviceArea: ServiceAreaPage | null }> {
   try {
@@ -17,7 +17,7 @@ async function getServiceAreaData(serviceSlug: string, citySlug: string): Promis
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     
     const siteResponse = await fetch(`${apiUrl}/api/public/sites/${siteSlug}`, {
-      next: { revalidate: 3600 }
+      cache: 'no-store'
     });
     
     if (!siteResponse.ok) return { site: null, serviceArea: null };
@@ -28,7 +28,7 @@ async function getServiceAreaData(serviceSlug: string, citySlug: string): Promis
     const site = siteData.data;
     
     const serviceAreaResponse = await fetch(`${apiUrl}/api/public/sites/${site.slug}/service-areas/by-service/${serviceSlug}/${citySlug}`, {
-      next: { revalidate: 3600 }
+      cache: 'no-store'
     });
     
     if (!serviceAreaResponse.ok) return { site, serviceArea: null };

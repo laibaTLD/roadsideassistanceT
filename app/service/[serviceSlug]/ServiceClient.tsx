@@ -12,19 +12,37 @@ interface ServiceClientProps {
   service: Service | null;
 }
 
-export default function ServiceClient({ service }: ServiceClientProps) {
-  const { services } = useWebBuilder();
+export default function ServiceClient({ serviceSlug, service: serverService }: ServiceClientProps) {
+  const { services, loading } = useWebBuilder();
   
+  // Use server data if available, otherwise find in client data
+  const service = serverService || services.find(s => s.slug === serviceSlug);
+  
+  if (loading && !service) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-pulse text-xs uppercase tracking-[0.4em] opacity-40">Loading Service...</div>
+        </div>
+    );
+  }
+
   if (!service) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Service Not Found</h2>
-          <p className="text-gray-600 mb-4">The service could not be found.</p>
-          <Link href="/" className="inline-block text-blue-600 hover:underline">
-            Return Home
-          </Link>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center py-20">
+            <div className="text-center">
+                <h2 className="text-4xl font-serif uppercase tracking-tight mb-4">Service Not Found</h2>
+                <p className="text-xs uppercase tracking-[0.3em] opacity-60 mb-8">The requested service could not be located.</p>
+                <Link 
+                    href="/services" 
+                    className="text-[10px] uppercase tracking-[0.4em] font-bold border-b border-black pb-1 hover:opacity-60 transition-opacity"
+                >
+                    View All Services
+                </Link>
+            </div>
         </div>
+        <Footer />
       </div>
     );
   }

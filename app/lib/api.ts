@@ -112,9 +112,13 @@ export const mediaApi = {
       return isLocal ? path : path.replace(/^http:\/\//i, 'https://');
     }
     
-    // Remove leading slash and /uploads/ prefix if present
+    // Remove leading slash and /uploads/ or /api/uploads/ prefix if present
     let cleanPath = path?.replace(/^\//, '') || '';
-    cleanPath = cleanPath.replace(/^uploads\//, '');
+    if (cleanPath.startsWith('api/uploads/')) {
+      cleanPath = cleanPath.substring(12); // Remove 'api/uploads/'
+    } else {
+      cleanPath = cleanPath.replace(/^uploads\//, '');
+    }
     
     if (!cleanPath) return '';
     

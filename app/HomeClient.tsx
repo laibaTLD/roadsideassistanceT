@@ -7,7 +7,6 @@ import { Footer } from '@/app/components/layout/Footer';
 import { HeroSection } from '@/app/components/sections/HeroSection';
 import { AboutSection } from '@/app/components/sections/AboutSection';
 import { ServicesSection } from '@/app/components/sections/ServicesSection';
-import { ServiceHighlightsSection } from '@/app/components/sections/ServiceHighlightsSection';
 import { TestimonialsSection } from '@/app/components/sections/TestimonialsSection';
 import { FAQSection } from '@/app/components/sections/FAQSection';
 import { CTASection } from '@/app/components/sections/CTASection';
@@ -16,9 +15,9 @@ import { CompanyDetailSection } from '@/app/components/sections/CompanyDetailSec
 import { ProjectsSection } from '@/app/components/sections/ProjectsSection';
 import { CTA2Section } from '@/app/components/sections/CTA2Section';
 import { CTA3Section } from '@/app/components/sections/CTA3Section';
-import { ServingAreasSection } from '@/app/components/sections/ServingAreasSection';
 import { ContactSection } from './components/sections/ContactSection';
 import { GallerySection } from '@/app/components/sections/GallerySection';
+import { BlogSection } from '@/app/components/sections/BlogSection';
 
 export default function HomeClient() {
   const { site, pages, testimonials, loading, error } = useWebBuilder();
@@ -100,6 +99,11 @@ export default function HomeClient() {
   const homePage = pages.find((p: Page) => p.pageType === 'home');
   const displayPage = homePage;
 
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[home] site from WebBuilderProvider:', site);
+    console.log('[home] homePage:', homePage);
+  }
+
   if (!displayPage) {
     return (
       <div 
@@ -138,26 +142,23 @@ export default function HomeClient() {
       <Header />
 
       <main>
-        <HeroSection hero={displayPage.hero} />
+        {displayPage.hero?.enabled && <HeroSection hero={displayPage.hero} />}
 
-        <ServiceHighlightsSection serviceHighlightsSection={displayPage.serviceHighlightsSection} />
+        {displayPage.aboutSection?.enabled && <AboutSection aboutSection={displayPage.aboutSection} />}
+        {displayPage.servicesSection?.enabled && <ServicesSection servicesSection={displayPage.servicesSection} />}
+        {displayPage.ctaSection?.enabled && <CTASection ctaSection={displayPage.ctaSection} />}
 
-        <AboutSection aboutSection={displayPage.aboutSection} />
-        <ServicesSection servicesSection={displayPage.servicesSection} />
-        <CTASection ctaSection={displayPage.ctaSection} />
+        {displayPage.whyChooseUsSection?.enabled && <WhyChooseUsSection whyChooseUsSection={displayPage.whyChooseUsSection} />}
+        {displayPage.cta3Section?.enabled && <CTA3Section cta3Section={displayPage.cta3Section} />}
+        {displayPage.companyDetailSection?.enabled && <CompanyDetailSection companyDetailSection={displayPage.companyDetailSection} />}
+        {displayPage.projectsSection?.enabled && <ProjectsSection projectsSection={displayPage.projectsSection} />}
+        {displayPage.gallerySection?.enabled && <GallerySection gallerySection={displayPage.gallerySection} />}
+        {displayPage.blogSection?.enabled && <BlogSection blogSection={displayPage.blogSection} />}
+        {displayPage.cta2Section?.enabled && <CTA2Section cta2Section={displayPage.cta2Section} />}
 
-        <WhyChooseUsSection whyChooseUsSection={displayPage.whyChooseUsSection} />
-        <CTA3Section cta3Section={displayPage.cta3Section} />
-        <CompanyDetailSection companyDetailSection={displayPage.companyDetailSection} />
-        <ProjectsSection projectsSection={displayPage.projectsSection} />
-        <GallerySection gallerySection={displayPage.gallerySection} />
-        <CTA2Section cta2Section={displayPage.cta2Section} />
-        
-
-        <TestimonialsSection testimonialsSection={displayPage.testimonialsSection} />
-        <ServingAreasSection />
-        <FAQSection faqSection={displayPage.faqSection} />
-        <ContactSection contactSection={displayPage.contactSection} />
+        {displayPage.testimonialsSection?.enabled && <TestimonialsSection testimonialsSection={displayPage.testimonialsSection} />}
+        {displayPage.faqSection?.enabled && <FAQSection faqSection={displayPage.faqSection} />}
+        {displayPage.contactSection?.enabled && <ContactSection contactSection={displayPage.contactSection} />}
       </main>
       
       <Footer />

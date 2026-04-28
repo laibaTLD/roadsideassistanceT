@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { Header } from '@/app/components/layout/Header';
 import { Footer } from '@/app/components/layout/Footer';
 import { TiptapRenderer } from '@/app/components/ui/TiptapRenderer';
-import { getImageSrc } from '@/app/lib/utils';
+import { getImageSrc, cn } from '@/app/lib/utils';
 import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
 import { SeoHead } from '@/app/components/ui/SeoHead';
+import { HeroSection } from '@/app/components/sections/HeroSection';
+import { Page } from '@/app/lib/types';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 
 interface ProjectDetailSlugClientProps {
@@ -15,9 +17,10 @@ interface ProjectDetailSlugClientProps {
     otherProjects: any[];
     themeColors: ThemeColors;
     themeFonts: ThemeFonts;
+    pageConfig: Page | null;
 }
 
-export default function ProjectDetailSlugClient({ project, site, otherProjects, themeColors, themeFonts }: ProjectDetailSlugClientProps) {
+export default function ProjectDetailSlugClient({ project, site, otherProjects, themeColors, themeFonts, pageConfig }: ProjectDetailSlugClientProps) {
 
     const siteName = site?.business?.name || site?.name || 'Perspective';
     const seoTitle = `${project.seo?.title || project.title} | ${siteName}`;
@@ -28,68 +31,77 @@ export default function ProjectDetailSlugClient({ project, site, otherProjects, 
             <Header />
 
             <main className="relative pt-0">
-                <div className="relative h-[70vh] md:h-[85vh] w-full overflow-hidden flex items-end">
-                    {project.featuredImage?.url && (
-                        <div className="absolute inset-0 z-0">
-                            <img
-                                src={getImageSrc(project.featuredImage.url)}
-                                alt={project.featuredImage.altText || project.title}
-                                className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/50" />
-                        </div>
-                    )}
+                {/* Use the page configuration hero if enabled, otherwise fallback to project-specific header but only if it's considered a section we want */}
+                {pageConfig?.hero?.enabled ? (
+                    <HeroSection hero={pageConfig.hero} />
+                ) : (
+                    <div className="relative h-[70vh] md:h-[85vh] w-full overflow-hidden flex items-end">
+                        {project.featuredImage?.url && (
+                            <div className="absolute inset-0 z-0">
+                                <img
+                                    src={getImageSrc(project.featuredImage.url)}
+                                    alt={project.featuredImage.altText || project.title}
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/50" />
+                            </div>
+                        )}
 
-                    <div className="container mx-auto px-6 lg:px-12 relative z-10 pb-16 lg:pb-24">
-                        <div className="max-w-4xl">
-                            {project.category && (
-                                <span className="text-[10px] md:text-xs uppercase tracking-[0.4em] text-white/80 mb-6 block font-medium">
-                                    {project.category}
-                                </span>
+                        <div className="container mx-auto px-6 lg:px-12 relative z-10 pb-16 lg:pb-24">
+                            <div className="max-w-4xl">
+                                {project.category && (
+                                    <span className="text-[10px] md:text-xs uppercase tracking-[0.4em] text-white/80 mb-6 block font-medium">
+                                        {project.category}
+                                    </span>
+                                )}
+                                <h1
+                                    className="text-4xl md:text-6xl lg:text-7xl text-white font-extralight uppercase leading-[1.1] tracking-tight text-balance"
+                                    style={{ fontFamily: themeFonts.heading }}
+                                >
+                                    {project.title}
+                                </h1>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {(project.clientName || project.location) && (
+                    <div className="border-y" style={{ borderColor: `rgba(0, 0, 0, 0.1)`, backgroundColor: themeColors.pageBackground }}>
+                        <div className="container mx-auto px-6 lg:px-12 py-8 flex flex-wrap gap-8 md:gap-16 items-center">
+                            {project.clientName && (
+                                <div className="space-y-1">
+                                    <span className="text-[9px] uppercase tracking-[0.3em] block" style={{ color: 'rgba(0, 0, 0, 0.5)' }}>Client</span>
+                                    <span className="text-xs uppercase tracking-widest font-medium text-black">{project.clientName}</span>
+                                </div>
                             )}
-                            <h1
-                                className="text-4xl md:text-6xl lg:text-7xl text-white font-extralight uppercase leading-[1.1] tracking-tight text-balance"
-                                style={{ fontFamily: themeFonts.heading }}
+                            {project.location && (
+                                <div className="space-y-1">
+                                    <span className="text-[9px] uppercase tracking-[0.3em] block" style={{ color: 'rgba(0, 0, 0, 0.5)' }}>Location</span>
+                                    <span className="text-xs uppercase tracking-widest font-medium text-black">{project.location}</span>
+                                </div>
+                            )}
+                            <Link
+                                href="/project-detail"
+                                className="ml-auto flex items-center gap-2 group text-[10px] uppercase tracking-[0.4em] text-black"
                             >
-                                {project.title}
-                            </h1>
+                                <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Projects
+                            </Link>
                         </div>
                     </div>
-                </div>
-
-                <div className="border-y" style={{ borderColor: `rgba(0, 0, 0, 0.1)`, backgroundColor: themeColors.pageBackground }}>
-                    <div className="container mx-auto px-6 lg:px-12 py-8 flex flex-wrap gap-8 md:gap-16 items-center">
-                        {project.clientName && (
-                            <div className="space-y-1">
-                                <span className="text-[9px] uppercase tracking-[0.3em] block" style={{ color: 'rgba(0, 0, 0, 0.5)' }}>Client</span>
-                                <span className="text-xs uppercase tracking-widest font-medium text-black">{project.clientName}</span>
-                            </div>
-                        )}
-                        {project.location && (
-                            <div className="space-y-1">
-                                <span className="text-[9px] uppercase tracking-[0.3em] block" style={{ color: 'rgba(0, 0, 0, 0.5)' }}>Location</span>
-                                <span className="text-xs uppercase tracking-widest font-medium text-black">{project.location}</span>
-                            </div>
-                        )}
-                        <Link
-                            href="/project-detail"
-                            className="ml-auto flex items-center gap-2 group text-[10px] uppercase tracking-[0.4em] text-black"
-                        >
-                            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Projects
-                        </Link>
-                    </div>
-                </div>
+                )}
 
                 <div className="container mx-auto px-6 lg:px-12 py-4 lg:py-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                         <article className="lg:col-span-8 lg:col-start-3">
-                            <div
-                                className="prose prose-lg md:prose-xl max-w-none prose-headings:uppercase prose-headings:font-light prose-headings:tracking-widest !text-black mb-16"
-                                style={{ fontFamily: themeFonts.body }}
-                            >
-                                {project.shortDescription && <TiptapRenderer content={project.shortDescription} />}
-                                <TiptapRenderer content={project.description} />
-                            </div>
+                            {(project.shortDescription || project.description) && (
+                                <div
+                                    className="prose prose-lg md:prose-xl max-w-none prose-headings:uppercase prose-headings:font-light prose-headings:tracking-widest !text-black mb-16"
+                                    style={{ fontFamily: themeFonts.body }}
+                                >
+                                    {project.shortDescription && <TiptapRenderer content={project.shortDescription} />}
+                                    {project.description && <TiptapRenderer content={project.description} />}
+                                </div>
+                            )}
 
                             {project.galleryImages && project.galleryImages.length > 0 && (
                                 <div className="space-y-4 lg:space-y-8">
@@ -124,13 +136,18 @@ export default function ProjectDetailSlugClient({ project, site, otherProjects, 
                     </div>
                 </div>
 
-                {otherProjects.length > 0 && (
+                {otherProjects && otherProjects.length > 0 && (
                     <section className="py-24 lg:py-32" style={{ backgroundColor: `rgba(0, 0, 0, 0.02)` }}>
                         <div className="container mx-auto px-6 lg:px-12">
                             <h3 className="text-[11px] uppercase tracking-[0.6em] text-center mb-16 opacity-40 text-black">
                                 Related Works
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black/10">
+                            <div className={cn(
+                                "grid gap-px bg-black/10",
+                                otherProjects.length === 1 ? "grid-cols-1 max-w-md mx-auto" : 
+                                otherProjects.length === 2 ? "grid-cols-1 md:grid-cols-2" : 
+                                "grid-cols-1 md:grid-cols-3"
+                            )}>
                                 {otherProjects.map((other: any) => (
                                     <Link
                                         key={other._id}

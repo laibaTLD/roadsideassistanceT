@@ -3,8 +3,8 @@ import { generateMetadata as buildMetadata, getPageSeoData } from '@/app/lib/met
 import HomeClient from './HomeClient'
 import { Site, Page } from '@/app/lib/types'
 
-// Enable ISR - revalidate every hour (3600 seconds)
-export const revalidate = 3600;
+// Use SSR instead of ISR - fetch fresh data on every request
+export const dynamic = 'force-dynamic';
 
 async function getHomeData(): Promise<{ site: Site | null; homePage: Page | null }> {
   try {
@@ -12,7 +12,7 @@ async function getHomeData(): Promise<{ site: Site | null; homePage: Page | null
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     
     const siteResponse = await fetch(`${apiUrl}/api/public/sites/${siteSlug}`, {
-      next: { revalidate: 3600 }
+      cache: 'no-store'
     });
     
     if (!siteResponse.ok) return { site: null, homePage: null };
@@ -23,7 +23,7 @@ async function getHomeData(): Promise<{ site: Site | null; homePage: Page | null
     const site = siteData.data;
     
     const pagesResponse = await fetch(`${apiUrl}/api/public/sites/${site.slug}/pages`, {
-      next: { revalidate: 3600 }
+      cache: 'no-store'
     });
     
     if (!pagesResponse.ok) return { site, homePage: null };
@@ -36,7 +36,7 @@ async function getHomeData(): Promise<{ site: Site | null; homePage: Page | null
     
     if (homePage?._id) {
       const pageResponse = await fetch(`${apiUrl}/api/public/sites/${site.slug}/pages/${homePage._id}`, {
-        next: { revalidate: 3600 }
+        cache: 'no-store'
       });
       
       if (!pageResponse.ok) return { site, homePage: null };

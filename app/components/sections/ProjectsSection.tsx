@@ -47,31 +47,35 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = memo(({ projectsS
     return getImageSrc(imagePath);
   }, []);
 
+  // Projects Grid dynamic columns
+  const gridCols = displayItems.length === 1 ? 'grid-cols-1 max-w-2xl mx-auto' : 
+                  displayItems.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto' : 
+                  'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+
   return (
     <section
-      className={cn('relative w-full py-24 md:py-32 overflow-hidden', className)}
+      className={cn('relative w-full py-24 md:py-32', className)}
       style={{ backgroundColor: colors.bg }}
     >
-      <div className="relative max-w-[1400px] mx-auto px-8 md:px-16 lg:px-24">
+      <div className="container mx-auto px-6 lg:px-12">
         {/* Header */}
-        <div className="projects-header flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-16 lg:mb-20">
-          <div className="max-w-xl">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16 lg:mb-24">
+          <div className="max-w-2xl">
             {projectsSection.title && (
-              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold leading-tight" style={{ color: colors.mainText }}>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif font-light uppercase tracking-tight leading-none mb-6" style={{ color: colors.mainText }}>
                 <TiptapRenderer content={projectsSection.title} as="inline" />
               </h2>
             )}
+            {projectsSection.description && (
+              <div className="text-xs uppercase tracking-[0.3em] opacity-60 max-w-md" style={{ color: colors.secondaryText }}>
+                <TiptapRenderer content={projectsSection.description} />
+              </div>
+            )}
           </div>
-
-          {projectsSection.description && (
-            <p className="text-sm md:text-base max-w-md leading-relaxed lg:text-right" style={{ color: colors.secondaryText }}>
-              <TiptapRenderer content={projectsSection.description} as="inline" />
-            </p>
-          )}
         </div>
 
         {/* Projects Grid */}
-        <div className="projects-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+        <div className={cn("grid gap-12 lg:gap-16", gridCols)}>
           {displayItems.map((item: any, idx) => {
             const imageUrl = getImageUrl(item.featuredImage || item.image);
             const titleText = item.name || item.title || '';
@@ -81,49 +85,47 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = memo(({ projectsS
               <Link
                 key={idx}
                 href={`/project-detail/${item.slug || ''}`}
-                className="project-card group relative"
+                className="group flex flex-col h-full"
               >
-                <div className="relative aspect-[4/5] overflow-hidden rounded-xl mb-6">
+                <div className="relative aspect-[16/10] overflow-hidden mb-8 shadow-xl group-hover:shadow-2xl transition-all duration-700 bg-black/5">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
                       alt={titleText}
                       loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     />
                   ) : (
-                    <div 
-                      className="w-full h-full"
-                      style={{ backgroundColor: `${colors.primary}20` }}
-                    />
-                  )}
-
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `linear-gradient(to top, ${colors.primary}90, transparent, transparent)` }} />
-                  
-                  {/* View Project Link */}
-                  <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-                    <span className="text-sm font-medium" style={{ color: 'white' }}>View Project</span>
-                    <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: colors.primary }}
-                    >
-                      <ArrowRight className="w-4 h-4" style={{ color: 'white' }} />
+                    <div className="w-full h-full flex items-center justify-center opacity-20">
+                      No Image
                     </div>
-                  </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500" />
+                  
+                  {/* Category/Tag overlay if it exists in the data */}
+                  {item.category && (
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
+                       <span className="text-[9px] uppercase tracking-widest font-bold text-black">{item.category}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}
-                <div className="space-y-2">
-                  <h3 className="text-lg md:text-xl font-serif font-semibold leading-tight" style={{ color: colors.mainText }}>
+                <div className="mt-auto">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="text-[10px] tracking-[0.4em] uppercase font-bold opacity-30">
+                      {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                    </span>
+                    {locationText && (
+                      <span className="text-[9px] uppercase tracking-[0.2em] font-medium opacity-60">
+                        {locationText}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <h3 className="text-xl lg:text-2xl font-serif font-medium tracking-tight uppercase leading-tight group-hover:opacity-70 transition-opacity" style={{ color: colors.mainText }}>
                     {typeof titleText === 'string' ? titleText : <TiptapRenderer content={titleText} as="inline" />}
                   </h3>
-                  {locationText && (
-                    <p className="text-xs font-medium uppercase tracking-[0.2em]" style={{ color: colors.secondaryText }}>
-                      {locationText}
-                    </p>
-                  )}
                 </div>
               </Link>
             );
