@@ -86,7 +86,7 @@ export const Footer: React.FC = () => {
               <img
                 src={site.theme.logoUrl}
                 alt={site?.business?.name || site?.name}
-                className="h-12 w-auto object-contain brightness-0 invert"
+                className="h-12 w-auto object-contain"
               />
             ) : (
               <span className="font-serif text-3xl font-bold" style={{ color: textColor }}>
