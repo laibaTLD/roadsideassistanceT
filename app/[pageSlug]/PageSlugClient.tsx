@@ -94,7 +94,7 @@ export default function PageSlugClient({ page, serviceArea }: PageSlugClientProp
         {allowedSections.has('servingAreas') && <ServingAreasSection />}
       </main>
 
-      <Footer />
+      <Footer page={page} />
     </div>
   );
 }

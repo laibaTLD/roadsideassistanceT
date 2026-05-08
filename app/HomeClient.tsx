@@ -161,7 +161,7 @@ export default function HomeClient() {
         {displayPage.contactSection?.enabled && <ContactSection contactSection={displayPage.contactSection} />}
       </main>
       
-      <Footer />
+      <Footer page={displayPage} />
     </div>
   );
 }

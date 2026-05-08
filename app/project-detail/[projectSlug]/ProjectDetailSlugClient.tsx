@@ -170,7 +170,7 @@ export default function ProjectDetailSlugClient({ project, site, otherProjects, 
                 )}
             </main>
 
-            <Footer />
+            <Footer page={pageConfig} />
         </div>
     );
 }

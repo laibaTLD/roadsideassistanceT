@@ -28,7 +28,7 @@ export default function ServicesPage() {
         {serviceListPage?.servicesSection?.enabled && <ServicesSection servicesSection={serviceListPage.servicesSection} />}
       </main>
 
-      <Footer />
+      <Footer page={serviceListPage} />
     </div>
   );
 }

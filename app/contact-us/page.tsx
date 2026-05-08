@@ -28,7 +28,7 @@ export default function ContactPage() {
         {contactPage?.contactSection?.enabled && <ContactSection contactSection={contactPage.contactSection} />}
       </main>
 
-      <Footer />
+      <Footer page={contactPage} />
     </div>
   );
 }
