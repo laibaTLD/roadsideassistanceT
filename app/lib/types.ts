@@ -360,14 +360,6 @@ export interface Page {
     }>;
     order: number;
   }>;
-  footerOverrides?: {
-    enabled: boolean;
-    links: Array<{
-      label: string;
-      href: string;
-    }>;
-    copyright?: string;
-  };
   createdBy: string;
   createdAt: string;
   updatedAt: string;

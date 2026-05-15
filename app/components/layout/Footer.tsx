@@ -4,18 +4,25 @@ import React, { useEffect, useRef } from 'react';
 import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useThemeColors } from '@/app/hooks/useTheme';
 import { TiptapRenderer } from '@/app/components/ui/TiptapRenderer';
-import { ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react';
+import { getImageSrc } from '@/app/lib/utils';
+import {
+  ArrowUpRight,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Mail,
+  MapPin,
+  Phone,
+  Share2,
+  Twitter,
+  Youtube,
+} from 'lucide-react';
 import Link from 'next/link';
-import type { Page } from '@/app/lib/types';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
-}
-
-interface FooterProps {
-  page?: Page | null;
 }
 
 const isNonEmptyTiptap = (value: unknown): boolean => {
@@ -34,33 +41,34 @@ const isNonEmptyTiptap = (value: unknown): boolean => {
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 
-const buildPageHref = (p: Page): string => {
-  if (p.pageType === 'home') return '/';
-  const slug = (p.slug || '').replace(/^\/+|\/+$/g, '');
-  return slug ? `/${slug}` : '/';
+const SocialIcon: React.FC<{ platform: string }> = ({ platform }) => {
+  const key = platform.toLowerCase();
+  const className = 'w-4 h-4';
+  if (key === 'facebook') return <Facebook className={className} />;
+  if (key === 'instagram') return <Instagram className={className} />;
+  if (key === 'x' || key === 'twitter') return <Twitter className={className} />;
+  if (key === 'youtube') return <Youtube className={className} />;
+  if (key === 'linkedin') return <Linkedin className={className} />;
+  return <Share2 className={className} />;
 };
 
-const PAGE_TYPE_ORDER: Array<Page['pageType']> = [
-  'home',
-  'about',
-  'service-list',
-  'blog-list',
-  'project-detail',
-  'testimonials',
-  'contact',
-];
-
-export const Footer: React.FC<FooterProps> = ({ page }) => {
+export const Footer: React.FC = () => {
   const footerRef = useRef<HTMLElement>(null);
-  const { site, pages } = useWebBuilder();
+  const { site } = useWebBuilder();
   const themeColors = useThemeColors();
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo('.footer-content',
+      gsap.fromTo(
+        '.footer-content',
         { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out',
-          scrollTrigger: { trigger: footerRef.current, start: 'top 85%' }}
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: footerRef.current, start: 'top 85%' },
+        }
       );
     }, footerRef);
 
@@ -76,14 +84,11 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
   const siteFooter = site?.footer;
   const business = site?.business;
   const address = business?.address;
-  const pageOverrides = page?.footerOverrides;
-  const isPageOverrideActive = Boolean(pageOverrides?.enabled);
 
-  // ---- Brand
   const logoUrl = isNonEmptyString(siteFooter?.logo?.url)
-    ? siteFooter!.logo!.url
+    ? getImageSrc(siteFooter!.logo!.url)
     : isNonEmptyString(site?.theme?.logoUrl)
-      ? site!.theme!.logoUrl!
+      ? getImageSrc(site!.theme!.logoUrl!)
       : null;
   const businessName = isNonEmptyString(business?.name)
     ? business!.name!
@@ -93,66 +98,28 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
   const businessTagline = isNonEmptyString(business?.tagline) ? business!.tagline! : null;
   const logoAlt = siteFooter?.logo?.altText || businessName || 'Logo';
 
-  // Description: prefer site.footer.description, fall back to site.business.description (Tiptap)
-  // Either may be a plain string or a Tiptap JSON object depending on the backend payload.
-  const rawDescriptionCandidates: unknown[] = [
-    siteFooter?.description,
-    business?.description,
-  ];
+  const rawDescription = siteFooter?.description;
   const resolvedDescription: string | object | null =
-    (rawDescriptionCandidates.find((d) =>
-      isNonEmptyString(d) || isNonEmptyTiptap(d)
-    ) as string | object | undefined) ?? null;
-  const isDescriptionTiptap = !!resolvedDescription
-    && typeof resolvedDescription === 'object';
-  const descriptionString = isNonEmptyString(resolvedDescription)
-    ? resolvedDescription
-    : null;
-  const showSocial = Boolean(siteFooter?.showSocialLinks);
+    isNonEmptyString(rawDescription) || isNonEmptyTiptap(rawDescription)
+      ? (rawDescription as string | object)
+      : null;
+  const isDescriptionTiptap =
+    !!resolvedDescription && typeof resolvedDescription === 'object';
+
+  const showSocial = siteFooter?.showSocialLinks === true;
   const socialLinks = showSocial
     ? (site?.socialLinks || []).filter((l) => isNonEmptyString(l?.url))
     : [];
 
-  // ---- Nav links: page override > pages-derived
-  const overrideLinks = (pageOverrides?.links || [])
-    .filter((l) => isNonEmptyString(l?.label) && isNonEmptyString(l?.href))
-    .map((l) => ({ label: l.label, href: l.href }));
+  const footerColumns = (siteFooter?.columns || [])
+    .map((col) => ({
+      title: isNonEmptyString(col?.title) ? col.title : '',
+      links: (col?.links || []).filter(
+        (l) => isNonEmptyString(l?.label) && isNonEmptyString(l?.url)
+      ),
+    }))
+    .filter((col) => col.links.length > 0);
 
-  const publishedPages = (pages || []).filter(
-    (p) => p?.status === 'published' && isNonEmptyString(p?.name)
-  );
-  const orderedPages = [
-    ...PAGE_TYPE_ORDER
-      .map((type) => publishedPages.find((p) => p.pageType === type))
-      .filter((p): p is Page => Boolean(p)),
-    ...publishedPages.filter((p) => !PAGE_TYPE_ORDER.includes(p.pageType)),
-  ];
-  const seenHrefs = new Set<string>();
-  const derivedNavLinks = orderedPages
-    .map((p) => ({ label: p.name, href: buildPageHref(p) }))
-    .filter((l) => {
-      if (seenHrefs.has(l.href)) return false;
-      seenHrefs.add(l.href);
-      return true;
-    });
-
-  const navLinks = isPageOverrideActive && overrideLinks.length > 0
-    ? overrideLinks
-    : derivedNavLinks;
-
-  // ---- Site footer columns (rendered only when no page override is overriding)
-  const siteColumns = !isPageOverrideActive
-    ? (siteFooter?.columns || [])
-        .map((col) => ({
-          title: isNonEmptyString(col?.title) ? col.title : '',
-          links: (col?.links || []).filter(
-            (l) => isNonEmptyString(l?.label) && isNonEmptyString(l?.url)
-          ),
-        }))
-        .filter((col) => col.links.length > 0)
-    : [];
-
-  // ---- Contact details
   const contactPhone = isNonEmptyString(business?.phone) ? business!.phone! : null;
   const contactEmail = isNonEmptyString(business?.email) ? business!.email! : null;
   const addressLine1 = isNonEmptyString(address?.street) ? address!.street! : null;
@@ -168,18 +135,17 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
   const hasAddress = Boolean(addressLine1 || addressLine2 || addressCountry);
   const hasContact = Boolean(contactPhone || contactEmail || hasAddress);
 
-  // ---- Copyright
-  const overrideCopyright = isPageOverrideActive && isNonEmptyString(pageOverrides?.copyright)
-    ? pageOverrides!.copyright!
+  const siteCopyright = isNonEmptyTiptap(siteFooter?.copyright)
+    ? siteFooter!.copyright
     : null;
-  const siteCopyright = isNonEmptyTiptap(siteFooter?.copyright) ? siteFooter!.copyright : null;
-  const hasCopyright = Boolean(overrideCopyright || siteCopyright);
+  const hasCopyright = Boolean(siteCopyright);
 
-  const hasBrand = Boolean(logoUrl || businessName || businessTagline || resolvedDescription || socialLinks.length > 0);
-  const hasNav = navLinks.length > 0;
-  const hasSiteColumns = siteColumns.length > 0;
+  const hasBrand = Boolean(
+    logoUrl || businessName || businessTagline || resolvedDescription || socialLinks.length > 0
+  );
+  const hasColumns = footerColumns.length > 0;
 
-  const hasAnyContent = hasBrand || hasNav || hasSiteColumns || hasContact || hasCopyright;
+  const hasAnyContent = hasBrand || hasColumns || hasContact || hasCopyright;
   if (!hasAnyContent) return null;
 
   const eyebrowClass = 'text-[11px] font-semibold uppercase tracking-[0.25em]';
@@ -192,12 +158,10 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
     >
       <div className="footer-content relative max-w-[1400px] mx-auto px-6 sm:px-10 md:px-16 lg:px-24 pt-20 md:pt-24 pb-10">
 
-        {/* Top section: 3 aligned columns */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-y-14 md:gap-x-10 lg:gap-x-16 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-y-14 md:gap-x-10 lg:gap-x-12 items-start">
 
-          {/* ====== Brand ====== */}
           {hasBrand && (
-            <div className="md:col-span-12 lg:col-span-5 flex flex-col gap-6">
+            <div className="md:col-span-12 lg:col-span-4 flex flex-col gap-6">
               {logoUrl && (
                 <img
                   src={logoUrl}
@@ -232,7 +196,7 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
                   {isDescriptionTiptap ? (
                     <TiptapRenderer content={resolvedDescription} as="inline" />
                   ) : (
-                    <p>{descriptionString}</p>
+                    <p>{resolvedDescription as string}</p>
                   )}
                 </div>
               )}
@@ -240,12 +204,13 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
               {socialLinks.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2 pt-2">
                   {socialLinks.map((link, idx) => {
-                    const platformKey = typeof link.platform === 'string'
-                      ? link.platform
-                      : String(link.platform || 'social');
+                    const platformKey =
+                      typeof link.platform === 'string'
+                        ? link.platform
+                        : String(link.platform || 'social');
                     return (
                       <a
-                        key={link.url || `social-${idx}`}
+                        key={`${link.url}-${platformKey}-${idx}`}
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -267,9 +232,7 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
                         }}
                         aria-label={platformKey}
                       >
-                        <span className="text-xs font-bold">
-                          {platformKey.slice(0, 1).toUpperCase()}
-                        </span>
+                        <SocialIcon platform={platformKey} />
                       </a>
                     );
                   })}
@@ -278,116 +241,16 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
             </div>
           )}
 
-          {/* ====== Navigation ====== */}
-          {hasNav && (
-            <div className="md:col-span-6 lg:col-span-3 flex flex-col gap-5 md:pt-20">
-              <h3 className={eyebrowClass} style={{ color: mutedText }}>
-                Navigation
-              </h3>
-              <span
-                className="block w-10 h-px"
-                style={{ backgroundColor: subtleBorder }}
-                aria-hidden
-              />
-              <nav className="flex flex-col gap-3">
-                {navLinks.map((link, idx) => (
-                  <Link
-                    key={`${link.href}-${idx}`}
-                    href={link.href}
-                    className="group inline-flex items-center gap-2 text-base hover:opacity-80 transition-opacity"
-                    style={{ color: textColor }}
-                  >
-                    <span className="font-light">{link.label}</span>
-                    <ArrowUpRight
-                      className="w-4 h-4 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all"
-                    />
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          )}
-
-          {/* ====== Contact ====== */}
-          {hasContact && (
-            <div className="md:col-span-6 lg:col-span-4 flex flex-col gap-5 md:pt-20">
-              <h3 className={eyebrowClass} style={{ color: mutedText }}>
-                Get in Touch
-              </h3>
-              <span
-                className="block w-10 h-px"
-                style={{ backgroundColor: subtleBorder }}
-                aria-hidden
-              />
-
-              <ul className="flex flex-col gap-4 text-sm">
-                {contactPhone && (
-                  <li>
-                    <a
-                      href={`tel:${contactPhone}`}
-                      className="group inline-flex items-start gap-3 hover:opacity-80 transition-opacity"
-                      style={{ color: textColor }}
-                    >
-                      <span
-                        className="mt-0.5 inline-flex w-8 h-8 rounded-full items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: subtleBg, border: `1px solid ${subtleBorder}` }}
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                      </span>
-                      <span className="text-base font-light">{contactPhone}</span>
-                    </a>
-                  </li>
-                )}
-
-                {contactEmail && (
-                  <li>
-                    <a
-                      href={`mailto:${contactEmail}`}
-                      className="group inline-flex items-start gap-3 hover:opacity-80 transition-opacity break-all"
-                      style={{ color: textColor }}
-                    >
-                      <span
-                        className="mt-0.5 inline-flex w-8 h-8 rounded-full items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: subtleBg, border: `1px solid ${subtleBorder}` }}
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                      </span>
-                      <span className="text-base font-light">{contactEmail}</span>
-                    </a>
-                  </li>
-                )}
-
-                {hasAddress && (
-                  <li className="flex items-start gap-3">
-                    <span
-                      className="mt-0.5 inline-flex w-8 h-8 rounded-full items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: subtleBg, border: `1px solid ${subtleBorder}` }}
-                    >
-                      <MapPin className="w-3.5 h-3.5" />
-                    </span>
-                    <address
-                      className="not-italic text-sm leading-relaxed"
-                      style={{ color: mutedText }}
-                    >
-                      {addressLine1 && <>{addressLine1}<br /></>}
-                      {addressLine2 && <>{addressLine2}<br /></>}
-                      {addressCountry && <>{addressCountry}</>}
-                    </address>
-                  </li>
-                )}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Site footer columns (extra link groups from backend) */}
-        {hasSiteColumns && (
-          <div
-            className="mt-16 pt-12"
-            style={{ borderTop: `1px solid ${subtleBorder}` }}
-          >
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-10 gap-y-12 md:pt-20">
-              {siteColumns.map((col, colIdx) => (
-                <div key={`${col.title}-${colIdx}`} className="flex flex-col gap-5">
+          {hasColumns && (
+            <div
+              className={
+                hasContact
+                  ? 'md:col-span-12 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 gap-10 lg:gap-8'
+                  : 'md:col-span-12 lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-8'
+              }
+            >
+              {footerColumns.map((col, colIdx) => (
+                <div key={`footer-col-${colIdx}-${col.title}`} className="flex flex-col gap-5">
                   {col.title && (
                     <h3 className={eyebrowClass} style={{ color: mutedText }}>
                       {col.title}
@@ -407,34 +270,111 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
                         style={{ color: textColor }}
                       >
                         <span className="font-light">{link.label}</span>
-                        <ArrowUpRight
-                          className="w-4 h-4 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all"
-                        />
+                        <ArrowUpRight className="w-4 h-4 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
                       </Link>
                     ))}
                   </nav>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+
+          {hasContact && (
+            <div className="md:col-span-12 lg:col-span-4 flex flex-col gap-5">
+              <h3 className={eyebrowClass} style={{ color: mutedText }}>
+                Get in Touch
+              </h3>
+              <span
+                className="block w-10 h-px"
+                style={{ backgroundColor: subtleBorder }}
+                aria-hidden
+              />
+
+              <ul className="flex flex-col gap-4 text-sm">
+                {contactPhone && (
+                  <li>
+                    <a
+                      href={`tel:${contactPhone}`}
+                      className="group inline-flex items-start gap-3 hover:opacity-80 transition-opacity"
+                      style={{ color: textColor }}
+                    >
+                      <span
+                        className="mt-0.5 inline-flex w-8 h-8 rounded-full items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: subtleBg,
+                          border: `1px solid ${subtleBorder}`,
+                        }}
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                      </span>
+                      <span className="text-base font-light">{contactPhone}</span>
+                    </a>
+                  </li>
+                )}
+
+                {contactEmail && (
+                  <li>
+                    <a
+                      href={`mailto:${contactEmail}`}
+                      className="group inline-flex items-start gap-3 hover:opacity-80 transition-opacity break-all"
+                      style={{ color: textColor }}
+                    >
+                      <span
+                        className="mt-0.5 inline-flex w-8 h-8 rounded-full items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: subtleBg,
+                          border: `1px solid ${subtleBorder}`,
+                        }}
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                      </span>
+                      <span className="text-base font-light">{contactEmail}</span>
+                    </a>
+                  </li>
+                )}
+
+                {hasAddress && (
+                  <li className="flex items-start gap-3">
+                    <span
+                      className="mt-0.5 inline-flex w-8 h-8 rounded-full items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor: subtleBg,
+                        border: `1px solid ${subtleBorder}`,
+                      }}
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                    </span>
+                    <address
+                      className="not-italic text-sm leading-relaxed"
+                      style={{ color: mutedText }}
+                    >
+                      {addressLine1 && (
+                        <>
+                          {addressLine1}
+                          <br />
+                        </>
+                      )}
+                      {addressLine2 && (
+                        <>
+                          {addressLine2}
+                          <br />
+                        </>
+                      )}
+                      {addressCountry && <>{addressCountry}</>}
+                    </address>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Bottom Bar: Copyright */}
       {hasCopyright && (
         <div className="relative" style={{ borderTop: `1px solid ${subtleBorder}` }}>
           <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-16 lg:px-24 py-5">
-            <div
-              className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 text-xs"
-              style={{ color: mutedText }}
-            >
-              {overrideCopyright ? (
-                <span>{overrideCopyright}</span>
-              ) : siteCopyright ? (
-                <div>
-                  <TiptapRenderer content={siteCopyright} as="inline" />
-                </div>
-              ) : null}
+            <div className="text-xs" style={{ color: mutedText }}>
+              <TiptapRenderer content={siteCopyright} as="inline" />
             </div>
           </div>
         </div>

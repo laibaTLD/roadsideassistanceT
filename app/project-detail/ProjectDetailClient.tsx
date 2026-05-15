@@ -110,7 +110,7 @@ export default function ProjectDetailClient({ site, projects, themeColors, theme
                 </div>
             </main>
 
-            <Footer page={pageConfig} />
+            <Footer />
         </div>
     );
 }

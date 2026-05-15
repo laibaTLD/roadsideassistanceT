@@ -33,7 +33,7 @@ export const useChatbot = (siteId: string): UseChatbotReturn => {
     if (!siteId) {
       setSettings(null);
       setLoading(false);
-      setError('Site ID is required');
+      setError(null);
       return;
     }
 
@@ -43,28 +43,39 @@ export const useChatbot = (siteId: string): UseChatbotReturn => {
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       if (!API_BASE_URL) {
-        throw new Error('NEXT_PUBLIC_API_BASE_URL environment variable is required');
+        setSettings(null);
+        return;
       }
+
       const timestamp = Date.now();
       const response = await fetch(`${API_BASE_URL}/chatbot/public/${siteId}?t=${timestamp}`, {
-        next: { revalidate: 300 } // Cache for 5 minutes
+        next: { revalidate: 300 },
       });
 
+      // No chatbot configured or disabled on backend — treat as absent, not an error
+      if (response.status === 404 || response.status === 204) {
+        setSettings(null);
+        return;
+      }
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch chatbot settings: ${response.statusText}`);
+        setSettings(null);
+        return;
       }
 
       const data = await response.json();
+      const chatbotSettings = data?.data ?? data;
 
-      if (!data.success || !data.data) {
-        throw new Error('Invalid response format from chatbot API');
+      if (!chatbotSettings || chatbotSettings.isEnabled === false) {
+        setSettings(null);
+        return;
       }
 
-      setSettings(data.data);
-    } catch (err) {
-      console.error('Error fetching chatbot settings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch chatbot settings');
+      setSettings(chatbotSettings);
+    } catch {
+      // Network or parse failure — hide chatbot without surfacing errors to the UI
       setSettings(null);
+      setError(null);
     } finally {
       setLoading(false);
     }

@@ -28,7 +28,7 @@ export default function TestimonialsPage() {
         {testimonialsPage?.testimonialsSection?.enabled && <TestimonialsSection testimonialsSection={testimonialsPage.testimonialsSection} />}
       </main>
 
-      <Footer page={testimonialsPage} />
+      <Footer />
     </div>
   );
 }

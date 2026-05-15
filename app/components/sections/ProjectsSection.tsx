@@ -18,17 +18,12 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = memo(({ projectsS
   const themeColors = useThemeColors();
   const { projects } = useWebBuilder();
 
-  if (!projectsSection?.enabled) return null;
-
-  // Get projects from provider or manual selection - memoized
   const displayItems = useMemo(() => {
+    if (!projectsSection?.enabled) return [];
     const publishedProjects = (projects || []).filter((p) => p.status === 'published');
     return projectsSection.projects?.length ? projectsSection.projects : publishedProjects;
-  }, [projects, projectsSection.projects]);
+  }, [projects, projectsSection?.enabled, projectsSection?.projects]);
 
-  if (displayItems.length === 0) return null;
-
-  // Theme colors - memoized
   const colors = useMemo(() => ({
     bg: themeColors.pageBackground,
     primary: themeColors.primaryButton,
@@ -36,7 +31,6 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = memo(({ projectsS
     secondaryText: themeColors.secondaryText
   }), [themeColors]);
 
-  // Memoize getImageUrl function
   const getImageUrl = useMemo(() => (image: any) => {
     if (!image) return null;
     const img = image as any;
@@ -46,6 +40,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = memo(({ projectsS
     if (!imagePath) return null;
     return getImageSrc(imagePath);
   }, []);
+
+  if (!projectsSection?.enabled) return null;
+  if (displayItems.length === 0) return null;
 
   // Projects Grid dynamic columns
   const gridCols = displayItems.length === 1 ? 'grid-cols-1 max-w-2xl mx-auto' : 

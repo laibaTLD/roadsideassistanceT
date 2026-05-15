@@ -31,7 +31,7 @@ export default function BlogPage() {
           {blogListPage?.hero?.enabled && <HeroSection hero={blogListPage.hero} />}
           {blogListPage?.blogSection?.enabled && <BlogSection blogSection={blogListPage.blogSection} />}
         </main>
-        <Footer page={blogListPage} />
+        <Footer />
       </div>
     </>
   );

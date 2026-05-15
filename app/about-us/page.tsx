@@ -34,7 +34,7 @@ export default function AboutPage() {
         {aboutPage?.cta2Section?.enabled && <CTA2Section cta2Section={aboutPage.cta2Section} />}
       </main>
 
-      <Footer page={aboutPage} />
+      <Footer />
     </div>
   );
 }
