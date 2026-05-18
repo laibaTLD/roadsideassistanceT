@@ -21,8 +21,12 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = memo(({ projectsS
   const displayItems = useMemo(() => {
     if (!projectsSection?.enabled) return [];
     const publishedProjects = (projects || []).filter((p) => p.status === 'published');
-    return projectsSection.projects?.length ? projectsSection.projects : publishedProjects;
-  }, [projects, projectsSection?.enabled, projectsSection?.projects]);
+    const ids = projectsSection.projectIds;
+    if (!ids?.length) return publishedProjects;
+    return ids
+      .map((id) => publishedProjects.find((p) => p._id === id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  }, [projects, projectsSection?.enabled, projectsSection?.projectIds]);
 
   const colors = useMemo(() => ({
     bg: themeColors.pageBackground,
@@ -73,15 +77,15 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = memo(({ projectsS
 
         {/* Projects Grid */}
         <div className={cn("grid gap-12 lg:gap-16", gridCols)}>
-          {displayItems.map((item: any, idx) => {
-            const imageUrl = getImageUrl(item.featuredImage || item.image);
-            const titleText = item.name || item.title || '';
+          {displayItems.map((item, idx) => {
+            const imageUrl = getImageUrl(item.featuredImage);
+            const titleText = item.title || '';
             const locationText = item.location || '';
 
             return (
               <Link
-                key={idx}
-                href={`/project-detail/${item.slug || ''}`}
+                key={item._id}
+                href={`/project-detail/${item.slug}`}
                 className="group flex flex-col h-full"
               >
                 <div className="relative aspect-[16/10] overflow-hidden mb-8 shadow-xl group-hover:shadow-2xl transition-all duration-700 bg-black/5">

@@ -12,6 +12,7 @@ import { CTASection } from '@/app/components/sections/CTASection';
 import { WhyChooseUsSection } from '@/app/components/sections/WhyChooseUsSection';
 import { CompanyDetailSection } from '@/app/components/sections/CompanyDetailSection';
 import { ProjectsSection } from '@/app/components/sections/ProjectsSection';
+import { ProjectSection } from '@/app/components/sections/ProjectSection';
 import { CTA2Section } from '@/app/components/sections/CTA2Section';
 import { CTA3Section } from '@/app/components/sections/CTA3Section';
 import { ServingAreasSection } from '@/app/components/sections/ServingAreasSection';
@@ -24,18 +25,18 @@ import { Page } from '@/app/lib/types';
 const SECTION_ORDER = [
   'hero', 'about', 'services', 'gallery', 'testimonials', 'faq',
   'contact', 'blog', 'cta', 'whyChooseUs', 'companyDetail', 'projects',
-  'cta2', 'cta3', 'servingAreas',
+  'projectSection', 'cta2', 'cta3', 'servingAreas',
 ] as const;
 
 type SectionKey = typeof SECTION_ORDER[number];
 
 const PAGE_TYPE_SECTIONS: Record<string, SectionKey[]> = {
-  home:           ['hero', 'about', 'services', 'gallery', 'testimonials', 'faq', 'contact', 'blog', 'cta', 'whyChooseUs', 'companyDetail', 'projects', 'cta2', 'cta3'],
+  home:           ['hero', 'about', 'services', 'gallery', 'testimonials', 'faq', 'contact', 'blog', 'cta', 'whyChooseUs', 'companyDetail', 'projects', 'projectSection', 'cta2', 'cta3'],
   about:          ['hero', 'about', 'whyChooseUs', 'companyDetail', 'cta2'],
   contact:        ['hero', 'contact'],
   'service-list': ['hero', 'services'],
   'blog-list':    ['hero', 'blog'],
-  'project-detail': ['hero'],
+  'project-detail': ['hero', 'projectSection'],
   testimonials:   ['hero', 'testimonials'],
 };
 
@@ -89,6 +90,7 @@ export default function PageSlugClient({ page, serviceArea }: PageSlugClientProp
         {allowedSections.has('whyChooseUs') && displayPage.whyChooseUsSection?.enabled && <WhyChooseUsSection whyChooseUsSection={displayPage.whyChooseUsSection} />}
         {allowedSections.has('companyDetail') && displayPage.companyDetailSection?.enabled && <CompanyDetailSection companyDetailSection={displayPage.companyDetailSection} />}
         {allowedSections.has('projects') && displayPage.projectsSection?.enabled && <ProjectsSection projectsSection={displayPage.projectsSection} />}
+        {allowedSections.has('projectSection') && displayPage.projectSection?.enabled && <ProjectSection projectSection={displayPage.projectSection} />}
         {allowedSections.has('cta2') && displayPage.cta2Section?.enabled && <CTA2Section cta2Section={displayPage.cta2Section} />}
         {allowedSections.has('cta3') && displayPage.cta3Section?.enabled && <CTA3Section cta3Section={displayPage.cta3Section} />}
         {allowedSections.has('servingAreas') && <ServingAreasSection />}

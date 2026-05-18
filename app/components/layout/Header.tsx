@@ -6,27 +6,11 @@ import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useThemeColors } from '@/app/hooks/useTheme';
 import { getImageSrc } from '@/app/lib/utils';
 import { Menu } from 'lucide-react';
-import type { Page } from '@/app/lib/types';
+import { buildPageHref, getOrderedNavPages } from '@/app/lib/page-routes';
 import gsap from 'gsap';
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
-
-const buildPageHref = (p: Page): string => {
-  if (p.pageType === 'home') return '/';
-  const slug = (p.slug || '').replace(/^\/+|\/+$/g, '');
-  return slug ? `/${slug}` : '/';
-};
-
-const PAGE_TYPE_ORDER: Array<Page['pageType']> = [
-  'home',
-  'about',
-  'service-list',
-  'blog-list',
-  'project-detail',
-  'testimonials',
-  'contact',
-];
 
 export const Header: React.FC = () => {
   const { site, pages } = useWebBuilder();
@@ -73,24 +57,10 @@ export const Header: React.FC = () => {
       : null;
   const logoAlt = site?.footer?.logo?.altText || businessName || 'Logo';
 
-  // Backend-driven nav links derived from published pages
-  const publishedPages = (pages || []).filter(
-    (p) => p?.status === 'published' && isNonEmptyString(p?.name)
-  );
-  const orderedPages = [
-    ...PAGE_TYPE_ORDER
-      .map((type) => publishedPages.find((p) => p.pageType === type))
-      .filter((p): p is Page => Boolean(p)),
-    ...publishedPages.filter((p) => !PAGE_TYPE_ORDER.includes(p.pageType)),
-  ];
-  const seen = new Set<string>();
-  const navLinks = orderedPages
-    .map((p) => ({ label: p.name, href: buildPageHref(p) }))
-    .filter((l) => {
-      if (seen.has(l.href)) return false;
-      seen.add(l.href);
-      return true;
-    });
+  const navLinks = getOrderedNavPages(pages || []).map((p) => ({
+    label: p.name.trim(),
+    href: buildPageHref(p),
+  }));
 
   return (
     <>

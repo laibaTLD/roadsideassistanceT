@@ -8,6 +8,7 @@ import { getImageSrc, cn } from '@/app/lib/utils';
 import { SeoHead } from '@/app/components/ui/SeoHead';
 import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
 import { HeroSection } from '@/app/components/sections/HeroSection';
+import { ProjectSection } from '@/app/components/sections/ProjectSection';
 import { Page } from '@/app/lib/types';
 
 interface ProjectDetailClientProps {
@@ -34,10 +35,13 @@ export default function ProjectDetailClient({ site, projects, themeColors, theme
 
             {/* Use the page configuration hero if enabled */}
             {pageConfig?.hero?.enabled && <HeroSection hero={pageConfig.hero} />}
+            {pageConfig?.projectSection?.enabled && (
+                <ProjectSection projectSection={pageConfig.projectSection} />
+            )}
 
             <main className="py-24 lg:py-32">
                 <div className="container mx-auto px-6 lg:px-12">
-                    {/* Section Intro */}
+                    {!pageConfig?.projectSection?.enabled && (
                     <div className="mb-16 lg:mb-24">
                         <span className="text-[10px] tracking-[0.4em] uppercase font-bold opacity-40 mb-4 block">
                             Our Portfolio
@@ -49,6 +53,7 @@ export default function ProjectDetailClient({ site, projects, themeColors, theme
                             Selected Projects
                         </h1>
                     </div>
+                    )}
 
                     {/* Projects Grid */}
                     {publishedProjects.length > 0 ? (

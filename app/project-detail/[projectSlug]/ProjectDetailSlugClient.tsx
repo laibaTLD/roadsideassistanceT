@@ -8,6 +8,7 @@ import { getImageSrc, cn } from '@/app/lib/utils';
 import { ThemeColors, ThemeFonts } from '@/app/hooks/useTheme';
 import { SeoHead } from '@/app/components/ui/SeoHead';
 import { HeroSection } from '@/app/components/sections/HeroSection';
+import { ProjectSection } from '@/app/components/sections/ProjectSection';
 import { Page } from '@/app/lib/types';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 
@@ -63,6 +64,10 @@ export default function ProjectDetailSlugClient({ project, site, otherProjects, 
                             </div>
                         </div>
                     </div>
+                )}
+
+                {pageConfig?.projectSection?.enabled && (
+                    <ProjectSection projectSection={pageConfig.projectSection} />
                 )}
 
                 {(project.clientName || project.location) && (

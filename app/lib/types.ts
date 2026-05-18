@@ -316,15 +316,12 @@ export interface Page {
     enabled: boolean;
     title?: any;
     description?: any;
-    projects?: Array<{
-      title?: any;
-      description?: any;
-      image?: {
-        url: string;
-        altText?: string;
-      };
-      href?: string;
-    }>;
+    projectIds?: string[];
+  };
+  projectSection?: {
+    enabled: boolean;
+    title?: any;
+    description?: any;
   };
   cta2Section?: {
     enabled: boolean;

@@ -13,6 +13,7 @@ import { CTASection } from '@/app/components/sections/CTASection';
 import { WhyChooseUsSection } from '@/app/components/sections/WhyChooseUsSection';
 import { CompanyDetailSection } from '@/app/components/sections/CompanyDetailSection';
 import { ProjectsSection } from '@/app/components/sections/ProjectsSection';
+import { ProjectSection } from '@/app/components/sections/ProjectSection';
 import { CTA2Section } from '@/app/components/sections/CTA2Section';
 import { CTA3Section } from '@/app/components/sections/CTA3Section';
 import { ContactSection } from './components/sections/ContactSection';
@@ -152,6 +153,7 @@ export default function HomeClient() {
         {displayPage.cta3Section?.enabled && <CTA3Section cta3Section={displayPage.cta3Section} />}
         {displayPage.companyDetailSection?.enabled && <CompanyDetailSection companyDetailSection={displayPage.companyDetailSection} />}
         {displayPage.projectsSection?.enabled && <ProjectsSection projectsSection={displayPage.projectsSection} />}
+        {displayPage.projectSection?.enabled && <ProjectSection projectSection={displayPage.projectSection} />}
         {displayPage.gallerySection?.enabled && <GallerySection gallerySection={displayPage.gallerySection} />}
         {displayPage.blogSection?.enabled && <BlogSection blogSection={displayPage.blogSection} />}
         {displayPage.cta2Section?.enabled && <CTA2Section cta2Section={displayPage.cta2Section} />}
