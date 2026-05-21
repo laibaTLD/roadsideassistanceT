@@ -5,11 +5,7 @@ import { ErrorBoundary } from '@/app/components/ui/ErrorBoundary'
 import { ThemeFontWrapper } from './components/ui/ThemeFontWrapper'
 import { LanguageProvider } from '@/app/i18n/LanguageProvider'
 import { ChatbotProviderWrapper } from '@/app/providers/ChatbotProviderWrapper'
-
-export const metadata: Metadata = {
-  title: 'Web Builder Site',
-  description: 'Generated site using Web Builder',
-}
+import { generateMetadata as buildMetadata, getSiteSeoData } from '@/app/lib/metadata'
 
 import Preloader from './components/ui/Preloader'
 
@@ -47,6 +43,17 @@ async function getSiteData() {
     console.error('Error fetching site data:', error);
     return null;
   }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const siteData = await getSiteData()
+  if (!siteData?.site) {
+    return {
+      title: 'Web Builder Site',
+      description: 'Generated site using Web Builder',
+    }
+  }
+  return buildMetadata(getSiteSeoData(siteData.site), siteData.site)
 }
 
 export default async function RootLayout({

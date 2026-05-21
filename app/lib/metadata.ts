@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Page, Site, Service, BlogPost, ServiceAreaPage } from './types'
+import { getImageSrc } from './utils'
 
 interface SEOData {
   title?: string
@@ -47,6 +48,13 @@ export function generateMetadata(seoData: SEOData, site?: Site): Metadata {
         index: false,
         follow: false,
       },
+    }
+  }
+
+  if (site?.seo?.faviconUrl) {
+    const faviconUrl = getImageSrc(site.seo.faviconUrl)
+    if (faviconUrl) {
+      metadata.icons = { icon: faviconUrl, shortcut: faviconUrl }
     }
   }
 
